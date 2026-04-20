@@ -1,0 +1,6 @@
+{
+  "name": "CIQUAL Explorer",
+  "description": "Moteur de recherche de la base de données nutritionnelle CIQUAL avec filtres et graphiques.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
