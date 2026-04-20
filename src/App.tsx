@@ -32,6 +32,7 @@ interface FoodItem {
   vitB9: number;
   vitB12: number;
   tyrosine: number;
+  quantity?: number; // In grams, default is 100g
 }
 
 type FilterOp = 'min' | 'max';
@@ -77,6 +78,9 @@ const VNR = {
   protein: 50,
   carbs: 260,
   fat: 70,
+  sugars: 90, // added approx for progress bar
+  fiber: 30, // added approx for progress bar
+  salt: 6, // added approx for progress bar
   magnesium: 375, // mg
   iron: 14, // mg
   zinc: 10, // mg
@@ -130,29 +134,33 @@ export default function App() {
   // La méthode reduce parcourt tous les items pour en faire la somme.
   // useMemo permet de ne recalculer les totaux que si selectedItems change.
   const totals = useMemo(() => {
-    return selectedItems.reduce((acc, item) => ({
-      energyKcal: acc.energyKcal + (item.energyKcal || 0),
-      protein: acc.protein + (item.protein || 0),
-      carbs: acc.carbs + (item.carbs || 0),
-      fat: acc.fat + (item.fat || 0),
-      sugars: acc.sugars + (item.sugars || 0),
-      fiber: acc.fiber + (item.fiber || 0),
-      salt: acc.salt + (item.salt || 0),
-      magnesium: acc.magnesium + (item.magnesium || 0),
-      iron: acc.iron + (item.iron || 0),
-      zinc: acc.zinc + (item.zinc || 0),
-      iodine: acc.iodine + (item.iodine || 0),
-      selenium: acc.selenium + (item.selenium || 0),
-      vitA: acc.vitA + (item.vitA || 0),
-      vitC: acc.vitC + (item.vitC || 0),
-      vitD3: acc.vitD3 + (item.vitD3 || 0),
-      vitE: acc.vitE + (item.vitE || 0),
-      vitB2: acc.vitB2 + (item.vitB2 || 0),
-      vitB6: acc.vitB6 + (item.vitB6 || 0),
-      vitB9: acc.vitB9 + (item.vitB9 || 0),
-      vitB12: acc.vitB12 + (item.vitB12 || 0),
-      tyrosine: acc.tyrosine + (item.tyrosine || 0),
-    }), { 
+    return selectedItems.reduce((acc, item) => {
+      const q = item.quantity ?? 100;
+      const factor = q / 100;
+      return {
+        energyKcal: acc.energyKcal + ((item.energyKcal || 0) * factor),
+        protein: acc.protein + ((item.protein || 0) * factor),
+        carbs: acc.carbs + ((item.carbs || 0) * factor),
+        fat: acc.fat + ((item.fat || 0) * factor),
+        sugars: acc.sugars + ((item.sugars || 0) * factor),
+        fiber: acc.fiber + ((item.fiber || 0) * factor),
+        salt: acc.salt + ((item.salt || 0) * factor),
+        magnesium: acc.magnesium + ((item.magnesium || 0) * factor),
+        iron: acc.iron + ((item.iron || 0) * factor),
+        zinc: acc.zinc + ((item.zinc || 0) * factor),
+        iodine: acc.iodine + ((item.iodine || 0) * factor),
+        selenium: acc.selenium + ((item.selenium || 0) * factor),
+        vitA: acc.vitA + ((item.vitA || 0) * factor),
+        vitC: acc.vitC + ((item.vitC || 0) * factor),
+        vitD3: acc.vitD3 + ((item.vitD3 || 0) * factor),
+        vitE: acc.vitE + ((item.vitE || 0) * factor),
+        vitB2: acc.vitB2 + ((item.vitB2 || 0) * factor),
+        vitB6: acc.vitB6 + ((item.vitB6 || 0) * factor),
+        vitB9: acc.vitB9 + ((item.vitB9 || 0) * factor),
+        vitB12: acc.vitB12 + ((item.vitB12 || 0) * factor),
+        tyrosine: acc.tyrosine + ((item.tyrosine || 0) * factor),
+      };
+    }, { 
       energyKcal: 0, protein: 0, carbs: 0, fat: 0, sugars: 0, fiber: 0, salt: 0,
       magnesium: 0, iron: 0, zinc: 0, iodine: 0, selenium: 0,
       vitA: 0, vitC: 0, vitD3: 0, vitE: 0, vitB2: 0, vitB6: 0, vitB9: 0, vitB12: 0, tyrosine: 0
@@ -170,13 +178,18 @@ export default function App() {
   
   const addToSelection = (food: FoodItem) => {
     if (!selectedItems.some(item => item.code === food.code)) {
-      setSelectedItems([...selectedItems, food]);
+      setSelectedItems([...selectedItems, { ...food, quantity: 100 }]);
       setRightTab('list');
     }
   };
 
   const removeFromSelection = (code: string | number) => {
     setSelectedItems(selectedItems.filter(item => item.code !== code));
+  };
+
+  const updateItemQuantity = (code: string | number, quantity: number) => {
+    if (quantity < 0) quantity = 0;
+    setSelectedItems(prev => prev.map(item => item.code === code ? { ...item, quantity } : item));
   };
 
   const filteredFoods = useMemo(() => {
@@ -484,130 +497,146 @@ export default function App() {
                   <>
                     <h3 className="font-bold text-sm text-slate-800 mb-3 shrink-0">Aliments sélectionnés</h3>
                     <div className="flex-1 overflow-y-auto space-y-3 pb-4 pr-1 custom-scroll">
-                      {selectedItems.map(item => (
-                        <div key={item.code} className="p-3 bg-white border border-slate-200 rounded-lg relative shadow-sm hover:border-indigo-200 transition-colors">
-                          <button 
-                            onClick={() => removeFromSelection(item.code)} 
-                            className="absolute top-2 right-2 p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-md transition-colors"
-                            title="Retirer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                          <h4 className="font-bold text-xs text-slate-800 pr-6 leading-tight mb-2">{item.name}</h4>
-                          <div className="grid grid-cols-2 gap-y-1.5 gap-x-2 text-[10px] text-slate-600">
-                            <span className="font-medium text-slate-800">{item.energyKcal.toFixed(0)} kcal</span>
-                            <span>Pro: {item.protein.toFixed(1)}g</span>
-                            <span>Lip: {item.fat.toFixed(1)}g</span>
-                            <span>Glu: {item.carbs.toFixed(1)}g</span>
+                      {selectedItems.map(item => {
+                        const q = item.quantity ?? 100;
+                        const factor = q / 100;
+                        return (
+                          <div key={item.code} className="p-3 bg-white border border-slate-200 rounded-lg relative shadow-sm hover:border-indigo-200 transition-colors">
+                            <button 
+                              onClick={() => removeFromSelection(item.code)} 
+                              className="absolute top-2 right-2 p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-md transition-colors"
+                              title="Retirer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                            <h4 className="font-bold text-xs text-slate-800 pr-8 leading-tight mb-3">{item.name}</h4>
+                            
+                            <div className="flex items-center gap-2 mb-3 bg-slate-50 p-1.5 rounded border border-slate-100">
+                              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex-1">Quantité</label>
+                              <div className="relative w-20">
+                                <input 
+                                  type="number" 
+                                  min="0" 
+                                  value={q} 
+                                  onChange={e => updateItemQuantity(item.code, Number(e.target.value))} 
+                                  className="w-full text-right pr-4 pl-2 py-1 text-xs font-bold text-slate-800 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 outline-none" 
+                                />
+                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-slate-400 font-medium pointer-events-none">g</span>
+                              </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-4 gap-1 text-center bg-slate-50 rounded py-1.5 border border-slate-100">
+                              <div>
+                                <div className="text-[8px] font-bold text-slate-400 uppercase">Kcal</div>
+                                <div className="text-[10px] font-bold text-slate-700">{((item.energyKcal || 0) * factor).toFixed(0)}</div>
+                              </div>
+                              <div>
+                                <div className="text-[8px] font-bold text-slate-400 uppercase">Pro</div>
+                                <div className="text-[10px] font-bold text-slate-700">{((item.protein || 0) * factor).toFixed(1)}</div>
+                              </div>
+                              <div>
+                                <div className="text-[8px] font-bold text-slate-400 uppercase">Lip</div>
+                                <div className="text-[10px] font-bold text-slate-700">{((item.fat || 0) * factor).toFixed(1)}</div>
+                              </div>
+                              <div>
+                                <div className="text-[8px] font-bold text-slate-400 uppercase">Glu</div>
+                                <div className="text-[10px] font-bold text-slate-700">{((item.carbs || 0) * factor).toFixed(1)}</div>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        )
+                      })}
                     </div>
                     
                     <div className="pt-4 border-t border-slate-200 mt-4 shrink-0 bg-white">
                       <h3 className="font-bold text-sm text-slate-800 mb-3">Résumé Nutritionnel</h3>
-                      <div className="grid grid-cols-2 gap-2 mb-2">
-                         <div className="p-2.5 bg-slate-50 rounded border border-slate-100 flex flex-col justify-between">
-                            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5 text-center">Énergie</div>
-                            <div className="text-xl font-black text-slate-800 text-center">{totals.energyKcal.toFixed(0)} <span className="text-[10px] font-normal uppercase text-slate-500">kcal</span></div>
-                            <div className="mt-2 w-full">
-                              <div className="flex justify-between text-[8.5px] font-bold text-slate-400 mb-0.5 uppercase tracking-wide"><span>VNR</span> <span>{Math.round((totals.energyKcal / VNR.energyKcal)*100)}%</span></div>
-                              <div className="h-1.5 bg-slate-200 rounded-full w-full overflow-hidden">
-                                <div className={cn("h-full rounded-full transition-all", (totals.energyKcal / VNR.energyKcal)*100 > 100 ? "bg-rose-500" : "bg-slate-500")} style={{width: `${Math.min(100, (totals.energyKcal / VNR.energyKcal)*100)}%`}}></div>
-                              </div>
-                            </div>
-                         </div>
-                         <div className="p-2.5 bg-emerald-50 rounded border border-emerald-100 flex flex-col justify-between">
-                            <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-0.5 text-center">Protéines</div>
-                            <div className="text-xl font-black text-emerald-900 text-center">{totals.protein.toFixed(1)} <span className="text-[10px] font-normal uppercase text-emerald-600">g</span></div>
-                            <div className="mt-2 w-full">
-                              <div className="flex justify-between text-[8.5px] font-bold text-emerald-600/70 mb-0.5 uppercase tracking-wide"><span>VNR</span> <span>{Math.round((totals.protein / VNR.protein)*100)}%</span></div>
-                              <div className="h-1.5 bg-emerald-200/60 rounded-full w-full overflow-hidden">
-                                <div className={cn("h-full rounded-full transition-all", (totals.protein / VNR.protein)*100 > 100 ? "bg-rose-500" : "bg-emerald-500")} style={{width: `${Math.min(100, (totals.protein / VNR.protein)*100)}%`}}></div>
-                              </div>
-                            </div>
-                         </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                         <div className="p-2.5 bg-blue-50 rounded border border-blue-100 flex flex-col justify-between">
-                            <div className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-0.5 text-center">Glucides</div>
-                            <div className="text-xl font-black text-blue-900 text-center">{totals.carbs.toFixed(1)} <span className="text-[10px] font-normal uppercase text-blue-600">g</span></div>
-                            <div className="mt-2 w-full">
-                              <div className="flex justify-between text-[8.5px] font-bold text-blue-600/70 mb-0.5 uppercase tracking-wide"><span>VNR</span> <span>{Math.round((totals.carbs / VNR.carbs)*100)}%</span></div>
-                              <div className="h-1.5 bg-blue-200/60 rounded-full w-full overflow-hidden">
-                                <div className={cn("h-full rounded-full transition-all", (totals.carbs / VNR.carbs)*100 > 100 ? "bg-rose-500" : "bg-blue-500")} style={{width: `${Math.min(100, (totals.carbs / VNR.carbs)*100)}%`}}></div>
-                              </div>
-                            </div>
-                         </div>
-                         <div className="p-2.5 bg-amber-50 rounded border border-amber-100 flex flex-col justify-between">
-                            <div className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-0.5 text-center">Lipides</div>
-                            <div className="text-xl font-black text-amber-900 text-center">{totals.fat.toFixed(1)} <span className="text-[10px] font-normal uppercase text-amber-600">g</span></div>
-                            <div className="mt-2 w-full">
-                              <div className="flex justify-between text-[8.5px] font-bold text-amber-600/70 mb-0.5 uppercase tracking-wide"><span>VNR</span> <span>{Math.round((totals.fat / VNR.fat)*100)}%</span></div>
-                              <div className="h-1.5 bg-amber-200/60 rounded-full w-full overflow-hidden">
-                                <div className={cn("h-full rounded-full transition-all", (totals.fat / VNR.fat)*100 > 100 ? "bg-rose-500" : "bg-amber-500")} style={{width: `${Math.min(100, (totals.fat / VNR.fat)*100)}%`}}></div>
-                              </div>
-                            </div>
-                         </div>
-                      </div>
                       
-                      <div className="flex gap-2 text-[10px] text-slate-500 justify-between mt-3 pt-3 border-t border-slate-100">
-                        <span>Sucre: <b className="text-slate-800">{totals.sugars.toFixed(1)}<span className="text-[8px] font-normal">g</span></b></span>
-                        <span>Fibre: <b className="text-slate-800">{totals.fiber.toFixed(1)}<span className="text-[8px] font-normal">g</span></b></span>
-                        <span>Sel: <b className="text-slate-800">{totals.salt.toFixed(1)}<span className="text-[8px] font-normal">g</span></b></span>
-                      </div>
-                      
-                      <div className="mt-3 pt-3 border-t border-slate-200">
-                        <h4 className="font-bold text-[10px] uppercase text-slate-500 mb-2">Minéraux & Oligos</h4>
-                        <div className="space-y-2">
-                           {[
-                             { label: 'Magnésium', val: totals.magnesium, vnr: VNR.magnesium, unit: 'mg' },
-                             { label: 'Fer', val: totals.iron, vnr: VNR.iron, unit: 'mg' },
-                             { label: 'Zinc', val: totals.zinc, vnr: VNR.zinc, unit: 'mg' },
-                             { label: 'Iode', val: totals.iodine, vnr: VNR.iodine, unit: 'µg' },
-                             { label: 'Sélénium', val: totals.selenium, vnr: VNR.selenium, unit: 'µg' },
-                           ].map(item => {
-                             const pct = Math.round((item.val / item.vnr) * 100);
-                             return (
-                               <div key={item.label} className="w-full">
-                                 <div className="flex justify-between items-end mb-0.5 text-[9px]">
-                                   <span className="text-slate-500">{item.label}</span>
-                                   <span className="font-bold text-slate-800">{item.val.toFixed(1)}<span className="font-normal text-[8px] text-slate-400">{item.unit}</span> <span className={cn("ml-1 font-bold", pct > 100 ? "text-rose-500" : "text-indigo-500")}>({pct}%)</span></span>
+                      <div className="space-y-4">
+                        {/* Group: Macro-nutriments */}
+                        <div>
+                          <h4 className="font-bold text-[10px] uppercase text-slate-500 mb-2 border-b border-slate-100 pb-1">Macro-nutriments</h4>
+                          <div className="space-y-2">
+                             {[
+                               { label: 'Énergie', val: totals.energyKcal, vnr: VNR.energyKcal, unit: 'kcal' },
+                               { label: 'Protéines', val: totals.protein, vnr: VNR.protein, unit: 'g' },
+                               { label: 'Glucides', val: totals.carbs, vnr: VNR.carbs, unit: 'g' },
+                               { label: 'Lipides', val: totals.fat, vnr: VNR.fat, unit: 'g' },
+                               { label: 'Sucres', val: totals.sugars, vnr: VNR.sugars, unit: 'g' },
+                               { label: 'Fibres', val: totals.fiber, vnr: VNR.fiber, unit: 'g' },
+                               { label: 'Sel', val: totals.salt, vnr: VNR.salt, unit: 'g' },
+                             ].map(item => {
+                               const pct = Math.round((item.val / item.vnr) * 100);
+                               return (
+                                 <div key={item.label} className="w-full">
+                                   <div className="flex justify-between items-end mb-0.5 text-[9px]">
+                                     <span className="text-slate-600 font-medium">{item.label}</span>
+                                     <span className="font-bold text-slate-800">{item.val.toFixed(1)}<span className="font-normal text-[8px] text-slate-400 ml-0.5">{item.unit}</span> <span className={cn("ml-1 font-bold w-7 inline-block text-right", pct > 100 ? "text-rose-500" : "text-indigo-500")}>{pct}%</span></span>
+                                   </div>
+                                   <div className="h-1 bg-slate-100 rounded-full w-full overflow-hidden">
+                                     <div className={cn("h-full transition-all", pct > 100 ? "bg-rose-500" : "bg-indigo-400")} style={{width: `${Math.min(100, pct)}%`}}></div>
+                                   </div>
                                  </div>
-                                 <div className="h-1 bg-slate-100 rounded-full w-full overflow-hidden">
-                                   <div className={cn("h-full transition-all", pct > 100 ? "bg-rose-500" : "bg-indigo-400")} style={{width: `${Math.min(100, pct)}%`}}></div>
+                               )
+                             })}
+                          </div>
+                        </div>
+
+                        {/* Group: Minéraux & Oligos */}
+                        <div>
+                          <h4 className="font-bold text-[10px] uppercase text-slate-500 mb-2 border-b border-slate-100 pb-1">Minéraux & Oligos</h4>
+                          <div className="space-y-2">
+                             {[
+                               { label: 'Magnésium', val: totals.magnesium, vnr: VNR.magnesium, unit: 'mg' },
+                               { label: 'Fer', val: totals.iron, vnr: VNR.iron, unit: 'mg' },
+                               { label: 'Zinc', val: totals.zinc, vnr: VNR.zinc, unit: 'mg' },
+                               { label: 'Iode', val: totals.iodine, vnr: VNR.iodine, unit: 'µg' },
+                               { label: 'Sélénium', val: totals.selenium, vnr: VNR.selenium, unit: 'µg' },
+                             ].map(item => {
+                               const pct = Math.round((item.val / item.vnr) * 100);
+                               return (
+                                 <div key={item.label} className="w-full">
+                                   <div className="flex justify-between items-end mb-0.5 text-[9px]">
+                                     <span className="text-slate-600 font-medium">{item.label}</span>
+                                     <span className="font-bold text-slate-800">{item.val.toFixed(1)}<span className="font-normal text-[8px] text-slate-400 ml-0.5">{item.unit}</span> <span className={cn("ml-1 font-bold w-7 inline-block text-right", pct > 100 ? "text-rose-500" : "text-indigo-500")}>{pct}%</span></span>
+                                   </div>
+                                   <div className="h-1 bg-slate-100 rounded-full w-full overflow-hidden">
+                                     <div className={cn("h-full transition-all", pct > 100 ? "bg-rose-500" : "bg-indigo-400")} style={{width: `${Math.min(100, pct)}%`}}></div>
+                                   </div>
                                  </div>
-                               </div>
-                             )
-                           })}
+                               )
+                             })}
+                          </div>
                         </div>
                         
-                        <h4 className="font-bold text-[10px] uppercase text-slate-500 mt-4 mb-2">Vitamines & Acides Aminés</h4>
-                        <div className="space-y-2">
-                           {[
-                             { label: 'Vitamine A', val: totals.vitA, vnr: VNR.vitA, unit: 'µg' },
-                             { label: 'Vitamine C', val: totals.vitC, vnr: VNR.vitC, unit: 'mg' },
-                             { label: 'Vitamine D3', val: totals.vitD3, vnr: VNR.vitD3, unit: 'µg' },
-                             { label: 'Vitamine E', val: totals.vitE, vnr: VNR.vitE, unit: 'mg' },
-                             { label: 'Vitamine B2', val: totals.vitB2, vnr: VNR.vitB2, unit: 'mg' },
-                             { label: 'Vitamine B6', val: totals.vitB6, vnr: VNR.vitB6, unit: 'mg' },
-                             { label: 'Vitamine B9', val: totals.vitB9, vnr: VNR.vitB9, unit: 'µg' },
-                             { label: 'Vitamine B12', val: totals.vitB12, vnr: VNR.vitB12, unit: 'µg' },
-                             { label: 'L-Tyrosine', val: totals.tyrosine, vnr: VNR.tyrosine, unit: 'g' },
-                           ].map(item => {
-                             const pct = Math.round((item.val / item.vnr) * 100);
-                             return (
-                               <div key={item.label} className="w-full">
-                                 <div className="flex justify-between items-end mb-0.5 text-[9px]">
-                                   <span className="text-slate-500">{item.label}</span>
-                                   <span className="font-bold text-slate-800">{item.val.toFixed(1)}<span className="font-normal text-[8px] text-slate-400">{item.unit}</span> <span className={cn("ml-1 font-bold", pct > 100 ? "text-rose-500" : "text-indigo-500")}>({pct}%)</span></span>
+                        {/* Group: Vitamines & Acides Aminés */}
+                        <div>
+                          <h4 className="font-bold text-[10px] uppercase text-slate-500 mb-2 border-b border-slate-100 pb-1">Vitamines & Acides Aminés</h4>
+                          <div className="space-y-2">
+                             {[
+                               { label: 'Vitamine A', val: totals.vitA, vnr: VNR.vitA, unit: 'µg' },
+                               { label: 'Vitamine C', val: totals.vitC, vnr: VNR.vitC, unit: 'mg' },
+                               { label: 'Vitamine D3', val: totals.vitD3, vnr: VNR.vitD3, unit: 'µg' },
+                               { label: 'Vitamine E', val: totals.vitE, vnr: VNR.vitE, unit: 'mg' },
+                               { label: 'Vitamine B2', val: totals.vitB2, vnr: VNR.vitB2, unit: 'mg' },
+                               { label: 'Vitamine B6', val: totals.vitB6, vnr: VNR.vitB6, unit: 'mg' },
+                               { label: 'Vitamine B9', val: totals.vitB9, vnr: VNR.vitB9, unit: 'µg' },
+                               { label: 'Vitamine B12', val: totals.vitB12, vnr: VNR.vitB12, unit: 'µg' },
+                               { label: 'L-Tyrosine', val: totals.tyrosine, vnr: VNR.tyrosine, unit: 'g' },
+                             ].map(item => {
+                               const pct = Math.round((item.val / item.vnr) * 100);
+                               return (
+                                 <div key={item.label} className="w-full">
+                                   <div className="flex justify-between items-end mb-0.5 text-[9px]">
+                                     <span className="text-slate-600 font-medium">{item.label}</span>
+                                     <span className="font-bold text-slate-800">{item.val.toFixed(1)}<span className="font-normal text-[8px] text-slate-400 ml-0.5">{item.unit}</span> <span className={cn("ml-1 font-bold w-7 inline-block text-right", pct > 100 ? "text-rose-500" : "text-indigo-500")}>{pct}%</span></span>
+                                   </div>
+                                   <div className="h-1 bg-slate-100 rounded-full w-full overflow-hidden">
+                                     <div className={cn("h-full transition-all", pct > 100 ? "bg-rose-500" : "bg-indigo-400")} style={{width: `${Math.min(100, pct)}%`}}></div>
+                                   </div>
                                  </div>
-                                 <div className="h-1 bg-slate-100 rounded-full w-full overflow-hidden">
-                                   <div className={cn("h-full transition-all", pct > 100 ? "bg-rose-500" : "bg-indigo-400")} style={{width: `${Math.min(100, pct)}%`}}></div>
-                                 </div>
-                               </div>
-                             )
-                           })}
+                               )
+                             })}
+                          </div>
                         </div>
                       </div>
                     </div>
