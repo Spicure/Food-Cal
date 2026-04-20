@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, Filter, Activity, ListChecks, Trash2 } from 'lucide-react';
+import { Search, Filter, Activity, ListChecks, Trash2, Menu, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Tooltip as RechartsTooltip } from 'recharts';
 
 import { cn } from './lib/utils';
@@ -34,15 +34,87 @@ interface FoodItem {
   tyrosine: number;
 }
 
+type FilterOp = 'min' | 'max';
+interface NutrientFilter {
+  value: number | '';
+  op: FilterOp;
+}
+
+const nutrientFiltersConfig = [
+  { group: 'Macro-nutriments', items: [
+    { key: 'energyKcal', label: 'Calories', unit: 'kcal' },
+    { key: 'carbs', label: 'Glucides', unit: 'g' },
+    { key: 'protein', label: 'Protéines', unit: 'g' },
+    { key: 'fat', label: 'Lipides', unit: 'g' },
+  ]},
+  { group: 'Minéraux & Oligo', items: [
+    { key: 'magnesium', label: 'Magnésium', unit: 'mg' },
+    { key: 'iron', label: 'Fer', unit: 'mg' },
+    { key: 'zinc', label: 'Zinc', unit: 'mg' },
+    { key: 'iodine', label: 'Iode', unit: 'µg' },
+    { key: 'selenium', label: 'Sélénium', unit: 'µg' },
+  ]},
+  { group: 'Vitamines B', items: [
+    { key: 'vitB2', label: 'Vitamine B2', unit: 'mg' },
+    { key: 'vitB6', label: 'Vitamine B6', unit: 'mg' },
+    { key: 'vitB9', label: 'Vitamine B9', unit: 'µg' },
+    { key: 'vitB12', label: 'Vitamine B12', unit: 'µg' },
+  ]},
+  { group: 'Vitamines', items: [
+    { key: 'vitA', label: 'Vitamine A', unit: 'µg' },
+    { key: 'vitC', label: 'Vitamine C', unit: 'mg' },
+    { key: 'vitD3', label: 'Vitamine D3', unit: 'µg' },
+    { key: 'vitE', label: 'Vitamine E', unit: 'mg' },
+  ]},
+  { group: 'Acides Aminés', items: [
+    { key: 'tyrosine', label: 'L-Tyrosine', unit: 'g' },
+  ]}
+];
+
+// VNR (Valeurs Nutritionnelles de Référence)
+const VNR = {
+  energyKcal: 2000,
+  protein: 50,
+  carbs: 260,
+  fat: 70,
+  magnesium: 375, // mg
+  iron: 14, // mg
+  zinc: 10, // mg
+  iodine: 150, // µg
+  selenium: 55, // µg
+  vitA: 800, // µg
+  vitC: 80, // mg
+  vitD3: 5, // µg
+  vitE: 12, // mg
+  vitB2: 1.4, // mg
+  vitB6: 1.4, // mg
+  vitB9: 200, // µg
+  vitB12: 2.5, // µg
+  tyrosine: 2, // g (2000mg base indicative)
+};
+
 export default function App() {
   const [foods, setFoods] = useState<FoodItem[]>([]);
   const [search, setSearch] = useState('');
   const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
   
-  // Filters
-  const [minProtein, setMinProtein] = useState<number>(0);
-  const [maxKcal, setMaxKcal] = useState<number>(1000);
+  // Advanced Filters State
+  const [filters, setFilters] = useState<Record<string, NutrientFilter>>({});
+  const [showFiltersMobile, setShowFiltersMobile] = useState(false);
   
+  const updateFilter = (key: string, value: number | '', op?: FilterOp) => {
+    setFilters(prev => {
+      const current = prev[key] || { value: '', op: 'min' };
+      return {
+        ...prev,
+        [key]: { 
+          value: value !== '' ? Number(value) : '', 
+          op: op || current.op 
+        }
+      };
+    });
+  };
+
   // Selection List State
   const [selectedItems, setSelectedItems] = useState<FoodItem[]>(() => {
     try {
@@ -109,23 +181,37 @@ export default function App() {
 
   const filteredFoods = useMemo(() => {
     return foods.filter(f => {
-      const matchSearch = f.name?.toLowerCase().includes(search.toLowerCase());
-      const matchProtein = f.protein >= minProtein;
-      const matchKcal = f.energyKcal <= maxKcal;
-      return matchSearch && matchProtein && matchKcal;
-    }).slice(0, 50); // limit for perf
-  }, [foods, search, minProtein, maxKcal]);
+      if (search && !f.name?.toLowerCase().includes(search.toLowerCase())) return false;
+      
+      for (const [key, filter] of Object.entries(filters)) {
+        if (filter.value === '') continue;
+        
+        const foodValue = (f as any)[key] || 0;
+        
+        if (filter.op === 'min' && foodValue < filter.value) return false;
+        if (filter.op === 'max' && foodValue > filter.value) return false;
+      }
+      
+      return true;
+    });
+  }, [foods, search, filters]);
 
   return (
     <div className="flex flex-col h-screen w-full bg-slate-50 text-slate-800 font-sans">
       {/* Header */}
-      <header className="h-14 bg-white border-b border-slate-200 px-4 md:px-6 flex items-center justify-between shadow-sm z-10 shrink-0">
+      <header className="h-14 bg-white border-b border-slate-200 px-3 md:px-6 flex items-center justify-between shadow-sm z-20 shrink-0 relative">
         <div className="flex items-center gap-2 md:gap-3">
-          <div className="bg-indigo-600 w-8 h-8 flex items-center justify-center rounded-lg text-white font-bold text-xl italic leading-none shrink-0">C</div>
-          <h1 className="text-lg font-bold tracking-tight text-slate-900 hidden sm:block">Food <span className="text-indigo-600">Cal</span></h1>
+          <button 
+            className="md:hidden p-1.5 text-slate-500 rounded-md hover:bg-slate-100" 
+            onClick={() => setShowFiltersMobile(!showFiltersMobile)}
+          >
+            {showFiltersMobile ? <X className="w-5 h-5"/> : <Menu className="w-5 h-5"/>}
+          </button>
+          <div className="bg-indigo-600 w-8 h-8 flex items-center justify-center rounded-lg text-white font-bold text-xl italic leading-none shrink-0 hidden sm:flex">C</div>
+          <h1 className="text-lg font-bold tracking-tight text-slate-900">Food <span className="text-indigo-600">Cal</span></h1>
           <span className="ml-2 md:ml-4 hidden sm:inline-block text-xs font-medium px-2 py-1 bg-slate-100 border border-slate-200 rounded text-slate-500 uppercase tracking-widest shrink-0">v2024.1</span>
         </div>
-        <div className="flex-1 max-w-md mx-4 md:mx-8">
+        <div className="flex-1 max-w-md mx-2 md:mx-8">
           <div className="relative">
             <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
               <Search className="w-4 h-4" />
@@ -134,12 +220,12 @@ export default function App() {
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="block w-full pl-10 pr-3 py-1.5 border border-slate-300 rounded-md bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
-              placeholder="Rechercher un aliment (ex: Pomme, Saumon...)"
+              className="block w-full pl-9 pr-3 py-1.5 border border-slate-300 rounded-md bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+              placeholder="Rechercher (ex: Pomme...)"
             />
           </div>
         </div>
-        <div className="flex items-center gap-4 shrink-0">
+        <div className="flex items-center gap-3 shrink-0">
           <button className="hidden sm:inline-block text-xs font-semibold px-4 py-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors">
             Exporter JSON
           </button>
@@ -150,39 +236,89 @@ export default function App() {
       </header>
 
       {/* Main Layout */}
-      <main className="flex-1 flex overflow-hidden">
+      <main className="flex-1 flex overflow-hidden relative">
         {/* Left Sidebar (Filters) */}
-        <aside className="w-64 bg-white border-r border-slate-200 flex-col p-4 gap-6 custom-scroll overflow-y-auto shrink-0 hidden md:flex">
-          <section>
-            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-              <Filter className="w-3 h-3" /> Filtres Nutritionnels
+        <aside className={cn(
+          "bg-white border-r border-slate-200 flex-col p-4 custom-scroll overflow-y-auto shrink-0 transition-all absolute md:static z-10 h-full w-72 md:w-64",
+          showFiltersMobile ? "flex left-0 shadow-2xl" : "hidden md:flex"
+        )}>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+              <Filter className="w-3.5 h-3.5" /> Filtres Avancés
             </h3>
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-xs font-medium">
-                  <label>Protéines (g)</label>
-                  <span className="text-indigo-600">&gt; {minProtein}g</span>
+            {Object.values(filters).some(f => f.value !== '') && (
+              <button 
+                onClick={() => setFilters({})}
+                className="text-[10px] text-indigo-600 font-bold hover:underline"
+              >
+                Réinitialiser
+              </button>
+            )}
+          </div>
+          
+          <div className="space-y-6">
+            {nutrientFiltersConfig.map(group => (
+              <section key={group.group}>
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase border-b border-slate-100 pb-1 mb-2">{group.group}</h4>
+                <div className="space-y-2">
+                  {group.items.map(item => {
+                    const currentVal = filters[item.key]?.value ?? '';
+                    const currentOp = filters[item.key]?.op ?? 'min';
+                    
+                    return (
+                      <div key={item.key} className="flex flex-col gap-1">
+                        <label className="text-xs font-medium text-slate-600 flex justify-between">
+                          {item.label}
+                        </label>
+                        <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded p-0.5 focus-within:ring-1 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all">
+                          <button 
+                            onClick={() => updateFilter(item.key, currentVal, currentOp === 'min' ? 'max' : 'min')}
+                            className={cn(
+                              "text-[10px] font-bold px-1.5 py-1 rounded text-slate-500 transition-colors border",
+                              currentOp === 'min' ? "bg-white border-slate-200 text-indigo-600 shadow-sm" : "border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-200/50"
+                            )}
+                            title="Minimum (>=)"
+                          >
+                            Min
+                          </button>
+                          <button 
+                            onClick={() => updateFilter(item.key, currentVal, currentOp === 'max' ? 'min' : 'max')}
+                            className={cn(
+                              "text-[10px] font-bold px-1.5 py-1 rounded text-slate-500 transition-colors border",
+                              currentOp === 'max' ? "bg-white border-slate-200 text-rose-600 shadow-sm" : "border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-200/50"
+                            )}
+                            title="Maximum (<=)"
+                          >
+                            Max
+                          </button>
+                          
+                          <div className="flex-1 relative flex items-center">
+                            <input 
+                              type="number"
+                              value={currentVal}
+                              onChange={e => updateFilter(item.key, e.target.value)}
+                              placeholder="-"
+                              className="w-full bg-transparent border-none text-xs text-right pr-6 focus:ring-0 appearance-none outline-none font-medium h-6 text-slate-700"
+                            />
+                            <span className="absolute right-2 text-[9px] text-slate-400 pointer-events-none select-none">{item.unit}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                <input 
-                  type="range" min="0" max="100" 
-                  value={minProtein} onChange={e => setMinProtein(parseInt(e.target.value))} 
-                  className="w-full h-1.5 bg-slate-100 rounded-full appearance-none cursor-pointer accent-indigo-500" 
-                />
-              </div>
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-xs font-medium">
-                  <label>Énergie (kcal)</label>
-                  <span className="text-indigo-600">0 - {maxKcal}</span>
-                </div>
-                <input 
-                  type="range" min="0" max="1000" 
-                  value={maxKcal} onChange={e => setMaxKcal(parseInt(e.target.value))} 
-                  className="w-full h-1.5 bg-slate-100 rounded-full appearance-none cursor-pointer accent-indigo-500" 
-                />
-              </div>
-            </div>
-          </section>
+              </section>
+            ))}
+          </div>
         </aside>
+        
+        {/* Overlay for mobile sidebar */}
+        {showFiltersMobile && (
+          <div 
+            className="absolute inset-0 bg-slate-900/20 z-0 md:hidden backdrop-blur-sm transition-all"
+            onClick={() => setShowFiltersMobile(false)}
+          />
+        )}
 
         {/* Center Grid (Results) */}
         <section className="flex-1 overflow-y-auto custom-scroll p-4 grid grid-cols-1 lg:grid-cols-2 gap-4 content-start">
@@ -371,23 +507,47 @@ export default function App() {
                     <div className="pt-4 border-t border-slate-200 mt-4 shrink-0 bg-white">
                       <h3 className="font-bold text-sm text-slate-800 mb-3">Résumé Nutritionnel</h3>
                       <div className="grid grid-cols-2 gap-2 mb-2">
-                         <div className="p-2.5 bg-slate-50 rounded text-center border border-slate-100">
-                            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Énergie totale</div>
-                            <div className="text-xl font-black text-slate-800">{totals.energyKcal.toFixed(0)} <span className="text-[10px] font-normal uppercase text-slate-500">kcal</span></div>
+                         <div className="p-2.5 bg-slate-50 rounded border border-slate-100 flex flex-col justify-between">
+                            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5 text-center">Énergie</div>
+                            <div className="text-xl font-black text-slate-800 text-center">{totals.energyKcal.toFixed(0)} <span className="text-[10px] font-normal uppercase text-slate-500">kcal</span></div>
+                            <div className="mt-2 w-full">
+                              <div className="flex justify-between text-[8.5px] font-bold text-slate-400 mb-0.5 uppercase tracking-wide"><span>VNR</span> <span>{Math.round((totals.energyKcal / VNR.energyKcal)*100)}%</span></div>
+                              <div className="h-1.5 bg-slate-200 rounded-full w-full overflow-hidden">
+                                <div className={cn("h-full rounded-full transition-all", (totals.energyKcal / VNR.energyKcal)*100 > 100 ? "bg-rose-500" : "bg-slate-500")} style={{width: `${Math.min(100, (totals.energyKcal / VNR.energyKcal)*100)}%`}}></div>
+                              </div>
+                            </div>
                          </div>
-                         <div className="p-2.5 bg-emerald-50 rounded text-center border border-emerald-100">
-                            <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-0.5">Protéines</div>
-                            <div className="text-xl font-black text-emerald-900">{totals.protein.toFixed(1)} <span className="text-[10px] font-normal uppercase text-emerald-600">g</span></div>
+                         <div className="p-2.5 bg-emerald-50 rounded border border-emerald-100 flex flex-col justify-between">
+                            <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-0.5 text-center">Protéines</div>
+                            <div className="text-xl font-black text-emerald-900 text-center">{totals.protein.toFixed(1)} <span className="text-[10px] font-normal uppercase text-emerald-600">g</span></div>
+                            <div className="mt-2 w-full">
+                              <div className="flex justify-between text-[8.5px] font-bold text-emerald-600/70 mb-0.5 uppercase tracking-wide"><span>VNR</span> <span>{Math.round((totals.protein / VNR.protein)*100)}%</span></div>
+                              <div className="h-1.5 bg-emerald-200/60 rounded-full w-full overflow-hidden">
+                                <div className={cn("h-full rounded-full transition-all", (totals.protein / VNR.protein)*100 > 100 ? "bg-rose-500" : "bg-emerald-500")} style={{width: `${Math.min(100, (totals.protein / VNR.protein)*100)}%`}}></div>
+                              </div>
+                            </div>
                          </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
-                         <div className="p-2.5 bg-blue-50 rounded text-center border border-blue-100">
-                            <div className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-0.5">Glucides</div>
-                            <div className="text-xl font-black text-blue-900">{totals.carbs.toFixed(1)} <span className="text-[10px] font-normal uppercase text-blue-600">g</span></div>
+                         <div className="p-2.5 bg-blue-50 rounded border border-blue-100 flex flex-col justify-between">
+                            <div className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-0.5 text-center">Glucides</div>
+                            <div className="text-xl font-black text-blue-900 text-center">{totals.carbs.toFixed(1)} <span className="text-[10px] font-normal uppercase text-blue-600">g</span></div>
+                            <div className="mt-2 w-full">
+                              <div className="flex justify-between text-[8.5px] font-bold text-blue-600/70 mb-0.5 uppercase tracking-wide"><span>VNR</span> <span>{Math.round((totals.carbs / VNR.carbs)*100)}%</span></div>
+                              <div className="h-1.5 bg-blue-200/60 rounded-full w-full overflow-hidden">
+                                <div className={cn("h-full rounded-full transition-all", (totals.carbs / VNR.carbs)*100 > 100 ? "bg-rose-500" : "bg-blue-500")} style={{width: `${Math.min(100, (totals.carbs / VNR.carbs)*100)}%`}}></div>
+                              </div>
+                            </div>
                          </div>
-                         <div className="p-2.5 bg-amber-50 rounded text-center border border-amber-100">
-                            <div className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-0.5">Lipides</div>
-                            <div className="text-xl font-black text-amber-900">{totals.fat.toFixed(1)} <span className="text-[10px] font-normal uppercase text-amber-600">g</span></div>
+                         <div className="p-2.5 bg-amber-50 rounded border border-amber-100 flex flex-col justify-between">
+                            <div className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-0.5 text-center">Lipides</div>
+                            <div className="text-xl font-black text-amber-900 text-center">{totals.fat.toFixed(1)} <span className="text-[10px] font-normal uppercase text-amber-600">g</span></div>
+                            <div className="mt-2 w-full">
+                              <div className="flex justify-between text-[8.5px] font-bold text-amber-600/70 mb-0.5 uppercase tracking-wide"><span>VNR</span> <span>{Math.round((totals.fat / VNR.fat)*100)}%</span></div>
+                              <div className="h-1.5 bg-amber-200/60 rounded-full w-full overflow-hidden">
+                                <div className={cn("h-full rounded-full transition-all", (totals.fat / VNR.fat)*100 > 100 ? "bg-rose-500" : "bg-amber-500")} style={{width: `${Math.min(100, (totals.fat / VNR.fat)*100)}%`}}></div>
+                              </div>
+                            </div>
                          </div>
                       </div>
                       
@@ -397,24 +557,57 @@ export default function App() {
                         <span>Sel: <b className="text-slate-800">{totals.salt.toFixed(1)}<span className="text-[8px] font-normal">g</span></b></span>
                       </div>
                       
-                      <div className="mt-3 pt-3 border-t border-slate-100 text-[9px]">
-                        <div className="grid grid-cols-3 gap-x-2 gap-y-1 text-slate-500">
-                           <div className="flex justify-between"><span>Mag:</span> <strong className="text-slate-800">{totals.magnesium.toFixed(1)}<span className="font-normal text-[7px]">mg</span></strong></div>
-                           <div className="flex justify-between"><span>Fer:</span> <strong className="text-slate-800">{totals.iron.toFixed(1)}<span className="font-normal text-[7px]">mg</span></strong></div>
-                           <div className="flex justify-between"><span>Zinc:</span> <strong className="text-slate-800">{totals.zinc.toFixed(1)}<span className="font-normal text-[7px]">mg</span></strong></div>
-                           <div className="flex justify-between"><span>Iod:</span> <strong className="text-slate-800">{totals.iodine.toFixed(1)}<span className="font-normal text-[7px]">µg</span></strong></div>
-                           <div className="flex justify-between"><span>Sél:</span> <strong className="text-slate-800">{totals.selenium.toFixed(1)}<span className="font-normal text-[7px]">µg</span></strong></div>
-                           <div className="flex justify-between"><span>L-Tyr:</span> <strong className="text-slate-800">{totals.tyrosine.toFixed(2)}<span className="font-normal text-[7px]">g</span></strong></div>
+                      <div className="mt-3 pt-3 border-t border-slate-200">
+                        <h4 className="font-bold text-[10px] uppercase text-slate-500 mb-2">Minéraux & Oligos</h4>
+                        <div className="space-y-2">
+                           {[
+                             { label: 'Magnésium', val: totals.magnesium, vnr: VNR.magnesium, unit: 'mg' },
+                             { label: 'Fer', val: totals.iron, vnr: VNR.iron, unit: 'mg' },
+                             { label: 'Zinc', val: totals.zinc, vnr: VNR.zinc, unit: 'mg' },
+                             { label: 'Iode', val: totals.iodine, vnr: VNR.iodine, unit: 'µg' },
+                             { label: 'Sélénium', val: totals.selenium, vnr: VNR.selenium, unit: 'µg' },
+                           ].map(item => {
+                             const pct = Math.round((item.val / item.vnr) * 100);
+                             return (
+                               <div key={item.label} className="w-full">
+                                 <div className="flex justify-between items-end mb-0.5 text-[9px]">
+                                   <span className="text-slate-500">{item.label}</span>
+                                   <span className="font-bold text-slate-800">{item.val.toFixed(1)}<span className="font-normal text-[8px] text-slate-400">{item.unit}</span> <span className={cn("ml-1 font-bold", pct > 100 ? "text-rose-500" : "text-indigo-500")}>({pct}%)</span></span>
+                                 </div>
+                                 <div className="h-1 bg-slate-100 rounded-full w-full overflow-hidden">
+                                   <div className={cn("h-full transition-all", pct > 100 ? "bg-rose-500" : "bg-indigo-400")} style={{width: `${Math.min(100, pct)}%`}}></div>
+                                 </div>
+                               </div>
+                             )
+                           })}
                         </div>
-                        <div className="grid grid-cols-3 gap-x-2 gap-y-1 text-slate-500 mt-2">
-                           <div className="flex justify-between"><span>Vit A:</span> <strong className="text-slate-800">{totals.vitA.toFixed(1)}<span className="font-normal text-[7px]">µg</span></strong></div>
-                           <div className="flex justify-between"><span>Vit C:</span> <strong className="text-slate-800">{totals.vitC.toFixed(1)}<span className="font-normal text-[7px]">mg</span></strong></div>
-                           <div className="flex justify-between"><span>Vit D3:</span> <strong className="text-slate-800">{totals.vitD3.toFixed(1)}<span className="font-normal text-[7px]">µg</span></strong></div>
-                           <div className="flex justify-between"><span>Vit E:</span> <strong className="text-slate-800">{totals.vitE.toFixed(1)}<span className="font-normal text-[7px]">mg</span></strong></div>
-                           <div className="flex justify-between"><span>Vit B2:</span> <strong className="text-slate-800">{totals.vitB2.toFixed(1)}<span className="font-normal text-[7px]">mg</span></strong></div>
-                           <div className="flex justify-between"><span>Vit B6:</span> <strong className="text-slate-800">{totals.vitB6.toFixed(1)}<span className="font-normal text-[7px]">mg</span></strong></div>
-                           <div className="flex justify-between"><span>Vit B9:</span> <strong className="text-slate-800">{totals.vitB9.toFixed(1)}<span className="font-normal text-[7px]">µg</span></strong></div>
-                           <div className="flex justify-between col-span-2 pr-6"><span>Vit B12:</span> <strong className="text-slate-800">{totals.vitB12.toFixed(1)}<span className="font-normal text-[7px]">µg</span></strong></div>
+                        
+                        <h4 className="font-bold text-[10px] uppercase text-slate-500 mt-4 mb-2">Vitamines & Acides Aminés</h4>
+                        <div className="space-y-2">
+                           {[
+                             { label: 'Vitamine A', val: totals.vitA, vnr: VNR.vitA, unit: 'µg' },
+                             { label: 'Vitamine C', val: totals.vitC, vnr: VNR.vitC, unit: 'mg' },
+                             { label: 'Vitamine D3', val: totals.vitD3, vnr: VNR.vitD3, unit: 'µg' },
+                             { label: 'Vitamine E', val: totals.vitE, vnr: VNR.vitE, unit: 'mg' },
+                             { label: 'Vitamine B2', val: totals.vitB2, vnr: VNR.vitB2, unit: 'mg' },
+                             { label: 'Vitamine B6', val: totals.vitB6, vnr: VNR.vitB6, unit: 'mg' },
+                             { label: 'Vitamine B9', val: totals.vitB9, vnr: VNR.vitB9, unit: 'µg' },
+                             { label: 'Vitamine B12', val: totals.vitB12, vnr: VNR.vitB12, unit: 'µg' },
+                             { label: 'L-Tyrosine', val: totals.tyrosine, vnr: VNR.tyrosine, unit: 'g' },
+                           ].map(item => {
+                             const pct = Math.round((item.val / item.vnr) * 100);
+                             return (
+                               <div key={item.label} className="w-full">
+                                 <div className="flex justify-between items-end mb-0.5 text-[9px]">
+                                   <span className="text-slate-500">{item.label}</span>
+                                   <span className="font-bold text-slate-800">{item.val.toFixed(1)}<span className="font-normal text-[8px] text-slate-400">{item.unit}</span> <span className={cn("ml-1 font-bold", pct > 100 ? "text-rose-500" : "text-indigo-500")}>({pct}%)</span></span>
+                                 </div>
+                                 <div className="h-1 bg-slate-100 rounded-full w-full overflow-hidden">
+                                   <div className={cn("h-full transition-all", pct > 100 ? "bg-rose-500" : "bg-indigo-400")} style={{width: `${Math.min(100, pct)}%`}}></div>
+                                 </div>
+                               </div>
+                             )
+                           })}
                         </div>
                       </div>
                     </div>

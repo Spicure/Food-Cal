@@ -19,6 +19,16 @@ body {
   border-radius: 10px;
 }
 
+/* Hide spin buttons for input[type=number] */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
 .macro-pill {
   padding: 2px 8px;
   border-radius: 4px;
