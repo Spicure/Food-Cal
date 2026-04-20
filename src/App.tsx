@@ -3,6 +3,7 @@ import { Search, Filter, Activity } from 'lucide-react';
 import { ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Tooltip as RechartsTooltip } from 'recharts';
 
 import { cn } from './lib/utils';
+import foodsData from '../public/ciqual.json';
 
 // Types
 interface FoodItem {
@@ -29,12 +30,8 @@ export default function App() {
   const [maxKcal, setMaxKcal] = useState<number>(1000);
   
   useEffect(() => {
-    fetch(`${import.meta.env.BASE_URL}ciqual.json`)
-      .then(res => res.json())
-      .then(data => {
-        setFoods(data);
-      })
-      .catch(err => console.error("Could not load CIQUAL data", err));
+    // Direct import bypasses all GitHub Pages path and fetch issues!
+    setFoods(foodsData as FoodItem[]);
   }, []);
 
   const filteredFoods = useMemo(() => {
