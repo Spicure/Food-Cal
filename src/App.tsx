@@ -43,32 +43,32 @@ interface NutrientFilter {
 
 const nutrientFiltersConfig = [
   { group: 'Macro-nutriments', items: [
-    { key: 'energyKcal', label: 'Calories', unit: 'kcal' },
-    { key: 'carbs', label: 'Glucides', unit: 'g' },
-    { key: 'protein', label: 'Protéines', unit: 'g' },
-    { key: 'fat', label: 'Lipides', unit: 'g' },
+    { key: 'energyKcal', label: 'Calories', unit: 'kcal', sliderMax: 1000 },
+    { key: 'carbs', label: 'Glucides', unit: 'g', sliderMax: 100 },
+    { key: 'protein', label: 'Protéines', unit: 'g', sliderMax: 100 },
+    { key: 'fat', label: 'Lipides', unit: 'g', sliderMax: 100 },
   ]},
   { group: 'Minéraux & Oligo', items: [
-    { key: 'magnesium', label: 'Magnésium', unit: 'mg' },
-    { key: 'iron', label: 'Fer', unit: 'mg' },
-    { key: 'zinc', label: 'Zinc', unit: 'mg' },
-    { key: 'iodine', label: 'Iode', unit: 'µg' },
-    { key: 'selenium', label: 'Sélénium', unit: 'µg' },
+    { key: 'magnesium', label: 'Magnésium', unit: 'mg', sliderMax: 1000 },
+    { key: 'iron', label: 'Fer', unit: 'mg', sliderMax: 100 },
+    { key: 'zinc', label: 'Zinc', unit: 'mg', sliderMax: 50 },
+    { key: 'iodine', label: 'Iode', unit: 'µg', sliderMax: 500 },
+    { key: 'selenium', label: 'Sélénium', unit: 'µg', sliderMax: 200 },
   ]},
   { group: 'Vitamines B', items: [
-    { key: 'vitB2', label: 'Vitamine B2', unit: 'mg' },
-    { key: 'vitB6', label: 'Vitamine B6', unit: 'mg' },
-    { key: 'vitB9', label: 'Vitamine B9', unit: 'µg' },
-    { key: 'vitB12', label: 'Vitamine B12', unit: 'µg' },
+    { key: 'vitB2', label: 'Vitamine B2', unit: 'mg', sliderMax: 10 },
+    { key: 'vitB6', label: 'Vitamine B6', unit: 'mg', sliderMax: 10 },
+    { key: 'vitB9', label: 'Vitamine B9', unit: 'µg', sliderMax: 1000 },
+    { key: 'vitB12', label: 'Vitamine B12', unit: 'µg', sliderMax: 100 },
   ]},
   { group: 'Vitamines', items: [
-    { key: 'vitA', label: 'Vitamine A', unit: 'µg' },
-    { key: 'vitC', label: 'Vitamine C', unit: 'mg' },
-    { key: 'vitD3', label: 'Vitamine D3', unit: 'µg' },
-    { key: 'vitE', label: 'Vitamine E', unit: 'mg' },
+    { key: 'vitA', label: 'Vitamine A', unit: 'µg', sliderMax: 2000 },
+    { key: 'vitC', label: 'Vitamine C', unit: 'mg', sliderMax: 500 },
+    { key: 'vitD3', label: 'Vitamine D3', unit: 'µg', sliderMax: 50 },
+    { key: 'vitE', label: 'Vitamine E', unit: 'mg', sliderMax: 50 },
   ]},
   { group: 'Acides Aminés', items: [
-    { key: 'tyrosine', label: 'L-Tyrosine', unit: 'g' },
+    { key: 'tyrosine', label: 'L-Tyrosine', unit: 'g', sliderMax: 5 },
   ]}
 ];
 
@@ -97,10 +97,47 @@ const VNR = {
   tyrosine: 2, // g (2000mg base indicative)
 };
 
+const mapUSDA = (fdcItem: any): FoodItem => {
+  const getNutrient = (ids: string[]) => {
+    const nut = fdcItem.foodNutrients?.find((n: any) => ids.includes(n.nutrientNumber) || ids.includes(String(n.nutrientId)));
+    return nut ? parseFloat(nut.value) : 0;
+  };
+  return {
+    code: 'usda_' + fdcItem.fdcId,
+    name: fdcItem.description,
+    group: fdcItem.foodCategory || 'USDA',
+    energyKcal: getNutrient(['208', '1008']),
+    protein: getNutrient(['203', '1003']),
+    carbs: getNutrient(['205', '1005']),
+    sugars: getNutrient(['269', '2000']),
+    fat: getNutrient(['204', '1004']),
+    fiber: getNutrient(['291', '1079']),
+    salt: getNutrient(['307', '1093']) / 400, // salt in g from sodium in mg
+    magnesium: getNutrient(['304', '1090']),
+    iron: getNutrient(['303', '1089']),
+    zinc: getNutrient(['309', '1095']),
+    iodine: getNutrient(['317', '1100']), 
+    selenium: getNutrient(['317', '1103']),
+    vitA: getNutrient(['320', '1106', '318', '1104']),
+    vitC: getNutrient(['401', '1162']),
+    vitD3: getNutrient(['326', '1111', '328', '1110']),
+    vitE: getNutrient(['323', '1109']),
+    vitB2: getNutrient(['405', '1166']),
+    vitB6: getNutrient(['415', '1175']),
+    vitB9: getNutrient(['417', '1177', '431', '1186']),
+    vitB12: getNutrient(['418', '1178']),
+    tyrosine: getNutrient(['511', '1222']),
+  };
+};
+
 export default function App() {
   const [foods, setFoods] = useState<FoodItem[]>([]);
   const [search, setSearch] = useState('');
   const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
+  
+  const [dataSource, setDataSource] = useState<'ciqual' | 'usda'>(() => {
+    return (localStorage.getItem('dataSource') as 'ciqual' | 'usda') || 'ciqual';
+  });
   
   // Advanced Filters State
   const [filters, setFilters] = useState<Record<string, NutrientFilter>>({});
@@ -172,9 +209,33 @@ export default function App() {
   }, [selectedItems]);
   
   useEffect(() => {
-    // Direct import bypasses all GitHub Pages path and fetch issues!
-    setFoods(foodsData as FoodItem[]);
-  }, []);
+    localStorage.setItem('dataSource', dataSource);
+    if (dataSource === 'ciqual') {
+      // Direct import bypasses all GitHub Pages path and fetch issues!
+      setFoods(foodsData as FoodItem[]);
+    } else {
+      setFoods([]);
+    }
+  }, [dataSource]);
+
+  useEffect(() => {
+    if (dataSource === 'usda') {
+      const controller = new AbortController();
+      const delay = setTimeout(() => {
+        fetch('https://api.nal.usda.gov/fdc/v1/foods/search?api_key=DEMO_KEY', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({query: search || 'apple', pageSize: 50, dataType: ['SR Legacy', 'Foundation']}),
+          signal: controller.signal
+        }).then(r => r.json()).then(d => {
+          if (d.foods) {
+             setFoods(d.foods.map(mapUSDA));
+          }
+        }).catch(() => {});
+      }, 500);
+      return () => { clearTimeout(delay); controller.abort(); };
+    }
+  }, [search, dataSource]);
   
   const addToSelection = (food: FoodItem) => {
     if (!selectedItems.some(item => item.code === food.code)) {
@@ -220,9 +281,22 @@ export default function App() {
           >
             {showFiltersMobile ? <X className="w-5 h-5"/> : <Menu className="w-5 h-5"/>}
           </button>
-          <div className="bg-indigo-600 w-8 h-8 flex items-center justify-center rounded-lg text-white font-bold text-xl italic leading-none shrink-0 hidden sm:flex">C</div>
-          <h1 className="text-lg font-bold tracking-tight text-slate-900">Food <span className="text-indigo-600">Cal</span></h1>
-          <span className="ml-2 md:ml-4 hidden sm:inline-block text-xs font-medium px-2 py-1 bg-slate-100 border border-slate-200 rounded text-slate-500 uppercase tracking-widest shrink-0">v2024.1</span>
+          <h1 className="text-lg font-bold tracking-tight text-slate-900 hidden sm:block">Food <span className="text-indigo-600">Cal</span></h1>
+          
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-md text-xs font-medium border border-slate-200">
+            <button 
+              onClick={() => setDataSource('ciqual')} 
+              className={cn("px-2 py-1 rounded transition-colors", dataSource === 'ciqual' ? "bg-white shadow-sm text-indigo-600 font-bold" : "text-slate-500 hover:text-slate-800")}
+            >
+              CIQUAL <span className="hidden md:inline">(FR)</span>
+            </button>
+            <button 
+              onClick={() => setDataSource('usda')} 
+              className={cn("px-2 py-1 rounded transition-colors", dataSource === 'usda' ? "bg-white shadow-sm text-rose-600 font-bold" : "text-slate-500 hover:text-slate-800")}
+            >
+              USDA <span className="hidden md:inline">(US)</span>
+            </button>
+          </div>
         </div>
         <div className="flex-1 max-w-md mx-2 md:mx-8">
           <div className="relative">
@@ -283,38 +357,48 @@ export default function App() {
                         <label className="text-xs font-medium text-slate-600 flex justify-between">
                           {item.label}
                         </label>
-                        <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded p-0.5 focus-within:ring-1 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all">
-                          <button 
-                            onClick={() => updateFilter(item.key, currentVal, currentOp === 'min' ? 'max' : 'min')}
-                            className={cn(
-                              "text-[10px] font-bold px-1.5 py-1 rounded text-slate-500 transition-colors border",
-                              currentOp === 'min' ? "bg-white border-slate-200 text-indigo-600 shadow-sm" : "border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-200/50"
-                            )}
-                            title="Minimum (>=)"
-                          >
-                            Min
-                          </button>
-                          <button 
-                            onClick={() => updateFilter(item.key, currentVal, currentOp === 'max' ? 'min' : 'max')}
-                            className={cn(
-                              "text-[10px] font-bold px-1.5 py-1 rounded text-slate-500 transition-colors border",
-                              currentOp === 'max' ? "bg-white border-slate-200 text-rose-600 shadow-sm" : "border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-200/50"
-                            )}
-                            title="Maximum (<=)"
-                          >
-                            Max
-                          </button>
-                          
-                          <div className="flex-1 relative flex items-center">
-                            <input 
-                              type="number"
-                              value={currentVal}
-                              onChange={e => updateFilter(item.key, e.target.value)}
-                              placeholder="-"
-                              className="w-full bg-transparent border-none text-xs text-right pr-6 focus:ring-0 appearance-none outline-none font-medium h-6 text-slate-700"
-                            />
-                            <span className="absolute right-2 text-[9px] text-slate-400 pointer-events-none select-none">{item.unit}</span>
+                        <div className="flex flex-col gap-1.5 bg-slate-50 border border-slate-200 rounded p-1.5 focus-within:ring-1 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all">
+                          <div className="flex items-center gap-1">
+                            <button 
+                              onClick={() => updateFilter(item.key, currentVal, currentOp === 'min' ? 'max' : 'min')}
+                              className={cn(
+                                "text-[10px] font-bold px-1.5 py-1 rounded text-slate-500 transition-colors border",
+                                currentOp === 'min' ? "bg-white border-slate-200 text-indigo-600 shadow-sm" : "border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-200/50"
+                              )}
+                              title="Minimum (>=)"
+                            >
+                              Min
+                            </button>
+                            <button 
+                              onClick={() => updateFilter(item.key, currentVal, currentOp === 'max' ? 'min' : 'max')}
+                              className={cn(
+                                "text-[10px] font-bold px-1.5 py-1 rounded text-slate-500 transition-colors border",
+                                currentOp === 'max' ? "bg-white border-slate-200 text-rose-600 shadow-sm" : "border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-200/50"
+                              )}
+                              title="Maximum (<=)"
+                            >
+                              Max
+                            </button>
+                            
+                            <div className="flex-1 relative flex items-center">
+                              <input 
+                                type="number"
+                                value={currentVal}
+                                onChange={e => updateFilter(item.key, e.target.value)}
+                                placeholder="0"
+                                className="w-full bg-white border border-slate-200 rounded text-xs text-right pr-6 focus:ring-0 appearance-none outline-none font-medium h-6 text-slate-700"
+                              />
+                              <span className="absolute right-2 text-[9px] text-slate-400 pointer-events-none select-none">{item.unit}</span>
+                            </div>
                           </div>
+                          <input 
+                              type="range"
+                              min="0"
+                              max={item.sliderMax}
+                              value={currentVal === '' ? 0 : currentVal}
+                              onChange={e => updateFilter(item.key, e.target.value)}
+                              className="w-full accent-indigo-500 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                          />
                         </div>
                       </div>
                     );
@@ -512,16 +596,25 @@ export default function App() {
                             <h4 className="font-bold text-xs text-slate-800 pr-8 leading-tight mb-3">{item.name}</h4>
                             
                             <div className="flex items-center gap-2 mb-3 bg-slate-50 p-1.5 rounded border border-slate-100">
-                              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex-1">Quantité</label>
-                              <div className="relative w-20">
+                              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest shrink-0">Quantité</label>
+                              <input 
+                                type="range"
+                                min="0"
+                                max="1000"
+                                step="5"
+                                value={q}
+                                onChange={e => updateItemQuantity(item.code, Number(e.target.value))}
+                                className="flex-1 mx-1 accent-indigo-500 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer min-w-0"
+                              />
+                              <div className="relative w-16 shrink-0">
                                 <input 
                                   type="number" 
                                   min="0" 
                                   value={q} 
                                   onChange={e => updateItemQuantity(item.code, Number(e.target.value))} 
-                                  className="w-full text-right pr-4 pl-2 py-1 text-xs font-bold text-slate-800 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 outline-none" 
+                                  className="w-full text-right pr-4 pl-1 py-1 text-xs font-bold text-slate-800 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 outline-none" 
                                 />
-                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-slate-400 font-medium pointer-events-none">g</span>
+                                <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[9px] text-slate-400 font-medium pointer-events-none">g</span>
                               </div>
                             </div>
                             
