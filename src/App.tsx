@@ -312,11 +312,6 @@ export default function App() {
             />
           </div>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
-          <button className="hidden sm:inline-flex text-[14px] font-[400] px-4 py-1 border border-[#0071e3] text-[#2997ff] rounded-[980px] hover:underline transition-all">
-            Exporter JSON
-          </button>
-        </div>
       </header>
 
       {/* Main Layout */}
