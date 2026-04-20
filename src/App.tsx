@@ -29,7 +29,7 @@ export default function App() {
   const [maxKcal, setMaxKcal] = useState<number>(1000);
   
   useEffect(() => {
-    fetch('/ciqual.json')
+    fetch(`${import.meta.env.BASE_URL}ciqual.json`)
       .then(res => res.json())
       .then(data => {
         setFoods(data);
