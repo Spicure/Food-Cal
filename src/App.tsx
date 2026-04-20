@@ -336,11 +336,11 @@ export default function App() {
         {/* Center Grid (Results) */}
         <section className="flex-1 overflow-y-auto custom-scroll p-4 grid grid-cols-1 lg:grid-cols-2 gap-4 content-start">
           <div className="col-span-full mb-1 flex justify-between items-center text-xs font-bold text-slate-400 uppercase tracking-widest">
-            {filteredFoods.length} résultat{filteredFoods.length !== 1 ? 's' : ''} {filteredFoods.length === 50 && '(limité)'}
+            {filteredFoods.length} résultat{filteredFoods.length !== 1 ? 's' : ''}
           </div>
-          {filteredFoods.map(food => (
+          {filteredFoods.map((food, index) => (
             <button
-              key={food.code}
+              key={`${food.code}-${index}`}
               onClick={() => {
                 setSelectedFood(food);
                 setRightTab('details');
@@ -497,11 +497,11 @@ export default function App() {
                   <>
                     <h3 className="font-bold text-sm text-slate-800 mb-3 shrink-0">Aliments sélectionnés</h3>
                     <div className="flex-1 overflow-y-auto space-y-3 pb-4 pr-1 custom-scroll">
-                      {selectedItems.map(item => {
+                      {selectedItems.map((item, index) => {
                         const q = item.quantity ?? 100;
                         const factor = q / 100;
                         return (
-                          <div key={item.code} className="p-3 bg-white border border-slate-200 rounded-lg relative shadow-sm hover:border-indigo-200 transition-colors">
+                          <div key={`${item.code}-${index}`} className="p-3 bg-white border border-slate-200 rounded-lg relative shadow-sm hover:border-indigo-200 transition-colors">
                             <button 
                               onClick={() => removeFromSelection(item.code)} 
                               className="absolute top-2 right-2 p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-md transition-colors"
