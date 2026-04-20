@@ -28,7 +28,29 @@ async function fetchCiqual() {
       sugars: parseNutrient(row["Sucres (g/100 g)"]),
       fat: parseNutrient(row["Lipides (g/100 g)"]),
       fiber: parseNutrient(row["Fibres alimentaires (g/100 g)"]),
-      salt: parseNutrient(row["Sel chlorure de sodium (g/100 g)"])
+      salt: parseNutrient(row["Sel chlorure de sodium (g/100 g)"]),
+      
+      // Minerals
+      magnesium: parseNutrient(row["Magnésium (mg/100 g)"]),
+      iron: parseNutrient(row["Fer (mg/100 g)"]),
+      zinc: parseNutrient(row["Zinc (mg/100 g)"]),
+      iodine: parseNutrient(row["Iode (µg/100 g)"]),
+      selenium: parseNutrient(row["Sélénium (µg/100 g)"]),
+      
+      // Vitamins
+      vitA: parseNutrient(row["Rétinol (µg/100 g)"]), // mapped to Retinol
+      vitC: parseNutrient(row["Vitamine C (mg/100 g)"]),
+      vitD3: parseNutrient(row["Vitamine D (µg/100 g)"]),
+      vitE: parseNutrient(row["Vitamine E (mg/100 g)"]),
+      
+      // B Complex
+      vitB2: parseNutrient(row["Vitamine B2 ou Riboflavine (mg/100 g)"]),
+      vitB6: parseNutrient(row["Vitamine B6 (mg/100 g)"]),
+      vitB9: parseNutrient(row["Vitamine B9 ou Folates totaux (µg/100 g)"]),
+      vitB12: parseNutrient(row["Vitamine B12 (µg/100 g)"]),
+      
+      // Amino acid (not in CIQUAL base 2020 by default, fallback to 0)
+      tyrosine: parseNutrient(row["L-Tyrosine (g/100 g)"]) || 0
     }));
 
     if (!fs.existsSync('./public')) fs.mkdirSync('./public');
