@@ -257,13 +257,13 @@ export default function App() {
     return foods.filter(f => {
       if (search && !f.name?.toLowerCase().includes(search.toLowerCase())) return false;
       
-      for (const [key, filter] of Object.entries(filters)) {
+      for (const [key, filter] of Object.entries(filters) as [string, NutrientFilter][]) {
         if (filter.value === '') continue;
         
         const foodValue = (f as any)[key] || 0;
         
-        if (filter.op === 'min' && foodValue < filter.value) return false;
-        if (filter.op === 'max' && foodValue > filter.value) return false;
+        if (filter.op === 'min' && foodValue < (filter.value as number)) return false;
+        if (filter.op === 'max' && foodValue > (filter.value as number)) return false;
       }
       
       return true;
@@ -271,54 +271,51 @@ export default function App() {
   }, [foods, search, filters]);
 
   return (
-    <div className="flex flex-col h-screen w-full bg-slate-50 text-slate-800 font-sans">
+    <div className="flex flex-col h-screen w-full bg-[#000000] text-[#f5f5f7] font-sans antialiased">
       {/* Header */}
-      <header className="h-14 bg-white border-b border-slate-200 px-3 md:px-6 flex items-center justify-between shadow-sm z-20 shrink-0 relative">
-        <div className="flex items-center gap-2 md:gap-3">
+      <header className="h-12 bg-[rgba(0,0,0,0.8)] backdrop-blur-[20px] saturate-[180%] border-b border-[rgba(255,255,255,0.1)] px-4 flex items-center justify-between z-50 shrink-0 relative">
+        <div className="flex items-center gap-2 md:gap-4">
           <button 
-            className="md:hidden p-1.5 text-slate-500 rounded-md hover:bg-slate-100" 
+            className="md:hidden p-1.5 text-white/70 rounded-md hover:bg-white/10" 
             onClick={() => setShowFiltersMobile(!showFiltersMobile)}
           >
             {showFiltersMobile ? <X className="w-5 h-5"/> : <Menu className="w-5 h-5"/>}
           </button>
-          <h1 className="text-lg font-bold tracking-tight text-slate-900 hidden sm:block">Food <span className="text-indigo-600">Cal</span></h1>
+          <h1 className="text-[17px] font-[600] tracking-[-0.374px] text-white hidden sm:block">Food Cal</h1>
           
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-md text-xs font-medium border border-slate-200">
+          <div className="flex items-center gap-1 bg-white/10 p-1 rounded-full text-[12px] font-[400] tracking-[-0.12px]">
             <button 
               onClick={() => setDataSource('ciqual')} 
-              className={cn("px-2 py-1 rounded transition-colors", dataSource === 'ciqual' ? "bg-white shadow-sm text-indigo-600 font-bold" : "text-slate-500 hover:text-slate-800")}
+              className={cn("px-3 py-1 rounded-full transition-colors", dataSource === 'ciqual' ? "bg-[#0071e3] text-white font-[600]" : "text-white/70 hover:text-white")}
             >
               CIQUAL <span className="hidden md:inline">(FR)</span>
             </button>
             <button 
               onClick={() => setDataSource('usda')} 
-              className={cn("px-2 py-1 rounded transition-colors", dataSource === 'usda' ? "bg-white shadow-sm text-rose-600 font-bold" : "text-slate-500 hover:text-slate-800")}
+              className={cn("px-3 py-1 rounded-full transition-colors", dataSource === 'usda' ? "bg-[#0071e3] text-white font-[600]" : "text-white/70 hover:text-white")}
             >
               USDA <span className="hidden md:inline">(US)</span>
             </button>
           </div>
         </div>
-        <div className="flex-1 max-w-md mx-2 md:mx-8">
-          <div className="relative">
-            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+        <div className="flex-1 max-w-md mx-2 md:mx-4 flex justify-end md:justify-center">
+          <div className="relative w-full max-w-[240px]">
+            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-white/50">
               <Search className="w-4 h-4" />
             </span>
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="block w-full pl-9 pr-3 py-1.5 border border-slate-300 rounded-md bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
-              placeholder="Rechercher (ex: Pomme...)"
+              className="block w-full pl-9 pr-3 py-1 bg-[#1d1d1f] border-none rounded-[11px] text-[14px] text-white focus:ring-[2px] focus:ring-[#0071e3] outline-none placeholder-white/50 tracking-tight"
+              placeholder="Rechercher..."
             />
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          <button className="hidden sm:inline-block text-xs font-semibold px-4 py-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors">
+          <button className="hidden sm:inline-flex text-[14px] font-[400] px-4 py-1 border border-[#0071e3] text-[#2997ff] rounded-[980px] hover:underline transition-all">
             Exporter JSON
           </button>
-          <div className="w-8 h-8 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center text-xs font-bold text-slate-600">
-            JD
-          </div>
         </div>
       </header>
 
@@ -326,17 +323,17 @@ export default function App() {
       <main className="flex-1 flex overflow-hidden relative">
         {/* Left Sidebar (Filters) */}
         <aside className={cn(
-          "bg-white border-r border-slate-200 flex-col p-4 custom-scroll overflow-y-auto shrink-0 transition-all absolute md:static z-10 h-full w-72 md:w-64",
+          "bg-[#f5f5f7] border-r border-[#d2d2d7] flex-col p-4 custom-scroll overflow-y-auto shrink-0 transition-all absolute md:static z-10 h-full w-72 md:w-64",
           showFiltersMobile ? "flex left-0 shadow-2xl" : "hidden md:flex"
         )}>
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+            <h3 className="text-[12px] font-[600] text-black/50 uppercase tracking-widest flex items-center gap-1.5">
               <Filter className="w-3.5 h-3.5" /> Filtres Avancés
             </h3>
-            {Object.values(filters).some(f => f.value !== '') && (
+            {Object.values(filters).some(f => (f as NutrientFilter).value !== '') && (
               <button 
                 onClick={() => setFilters({})}
-                className="text-[10px] text-indigo-600 font-bold hover:underline"
+                className="text-[12px] font-[400] text-[#0071e3] hover:underline"
               >
                 Réinitialiser
               </button>
@@ -346,24 +343,24 @@ export default function App() {
           <div className="space-y-6">
             {nutrientFiltersConfig.map(group => (
               <section key={group.group}>
-                <h4 className="text-[10px] font-bold text-slate-400 uppercase border-b border-slate-100 pb-1 mb-2">{group.group}</h4>
-                <div className="space-y-2">
+                <h4 className="text-[10px] font-[700] text-black/40 uppercase border-b border-[#d2d2d7] pb-1 mb-2">{group.group}</h4>
+                <div className="space-y-3">
                   {group.items.map(item => {
                     const currentVal = filters[item.key]?.value ?? '';
                     const currentOp = filters[item.key]?.op ?? 'min';
                     
                     return (
-                      <div key={item.key} className="flex flex-col gap-1">
-                        <label className="text-xs font-medium text-slate-600 flex justify-between">
+                      <div key={item.key} className="flex flex-col gap-1.5">
+                        <label className="text-[12px] font-[600] text-black/80 flex justify-between">
                           {item.label}
                         </label>
-                        <div className="flex flex-col gap-1.5 bg-slate-50 border border-slate-200 rounded p-1.5 focus-within:ring-1 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all">
+                        <div className="flex flex-col gap-1.5 bg-white border border-[#d2d2d7] rounded-[11px] p-2 focus-within:border-[#0071e3] focus-within:ring-[1px] focus-within:ring-[#0071e3] transition-all">
                           <div className="flex items-center gap-1">
                             <button 
                               onClick={() => updateFilter(item.key, currentVal, currentOp === 'min' ? 'max' : 'min')}
                               className={cn(
-                                "text-[10px] font-bold px-1.5 py-1 rounded text-slate-500 transition-colors border",
-                                currentOp === 'min' ? "bg-white border-slate-200 text-indigo-600 shadow-sm" : "border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-200/50"
+                                "text-[11px] font-[600] px-2 py-0.5 rounded-[5px] transition-colors",
+                                currentOp === 'min' ? "bg-[#0071e3] text-white" : "bg-transparent text-black/50 hover:bg-[#f5f5f7] hover:text-black"
                               )}
                               title="Minimum (>=)"
                             >
@@ -372,8 +369,8 @@ export default function App() {
                             <button 
                               onClick={() => updateFilter(item.key, currentVal, currentOp === 'max' ? 'min' : 'max')}
                               className={cn(
-                                "text-[10px] font-bold px-1.5 py-1 rounded text-slate-500 transition-colors border",
-                                currentOp === 'max' ? "bg-white border-slate-200 text-rose-600 shadow-sm" : "border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-200/50"
+                                "text-[11px] font-[600] px-2 py-0.5 rounded-[5px] transition-colors",
+                                currentOp === 'max' ? "bg-[#0071e3] text-white" : "bg-transparent text-black/50 hover:bg-[#f5f5f7] hover:text-black"
                               )}
                               title="Maximum (<=)"
                             >
@@ -386,9 +383,9 @@ export default function App() {
                                 value={currentVal}
                                 onChange={e => updateFilter(item.key, e.target.value)}
                                 placeholder="0"
-                                className="w-full bg-white border border-slate-200 rounded text-xs text-right pr-6 focus:ring-0 appearance-none outline-none font-medium h-6 text-slate-700"
+                                className="w-full bg-transparent border-none text-[12px] text-right pr-6 focus:ring-0 appearance-none outline-none font-[400] h-6 text-black"
                               />
-                              <span className="absolute right-2 text-[9px] text-slate-400 pointer-events-none select-none">{item.unit}</span>
+                              <span className="absolute right-1 text-[10px] text-black/40 pointer-events-none select-none">{item.unit}</span>
                             </div>
                           </div>
                           <input 
@@ -397,7 +394,7 @@ export default function App() {
                               max={item.sliderMax}
                               value={currentVal === '' ? 0 : currentVal}
                               onChange={e => updateFilter(item.key, e.target.value)}
-                              className="w-full accent-indigo-500 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                              className="w-full accent-[#0071e3] h-1.5 bg-[#d2d2d7] rounded-lg appearance-none cursor-pointer"
                           />
                         </div>
                       </div>
@@ -418,8 +415,8 @@ export default function App() {
         )}
 
         {/* Center Grid (Results) */}
-        <section className="flex-1 overflow-y-auto custom-scroll p-4 grid grid-cols-1 lg:grid-cols-2 gap-4 content-start">
-          <div className="col-span-full mb-1 flex justify-between items-center text-xs font-bold text-slate-400 uppercase tracking-widest">
+        <section className="flex-1 overflow-y-auto custom-scroll p-4 md:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-2 gap-4 content-start">
+          <div className="col-span-full mb-2 flex justify-between items-center text-[12px] font-[600] text-white/50 tracking-wide uppercase">
             {filteredFoods.length} résultat{filteredFoods.length !== 1 ? 's' : ''}
           </div>
           {filteredFoods.map((food, index) => (
@@ -430,64 +427,67 @@ export default function App() {
                 setRightTab('details');
               }}
               className={cn(
-                "bg-white border rounded-lg p-3 shadow-sm hover:border-indigo-400 cursor-pointer transition-all border-l-4 text-left focus:outline-none flex flex-col justify-between h-full min-h-[120px]",
-                selectedFood?.code === food.code ? "border-indigo-500 ring-1 ring-indigo-500 shadow-md border-l-indigo-500" : "border-slate-200",
-                food.energyKcal < 100 ? "border-l-emerald-400" : food.energyKcal < 300 ? "border-l-amber-400" : "border-l-rose-400"
+                "bg-[#1d1d1f] rounded-[18px] p-4 cursor-pointer transition-all border-none focus:outline-none flex flex-col justify-between h-full min-h-[140px] text-left",
+                selectedFood?.code === food.code ? "ring-[2px] ring-[#0071e3] shadow-[0_0_0_1px_#0071e3]" : "hover:bg-[#2a2a2d] ring-1 ring-white/5"
               )}
             >
               <div className="w-full">
-                <div className="flex justify-between mb-2 gap-2">
-                  <h4 className="font-bold text-sm truncate pr-2 text-slate-800" title={food.name}>{food.name}</h4>
-                  <span className="text-[10px] text-slate-400 shrink-0 mt-0.5">ID: {food.code}</span>
+                <div className="flex justify-between mb-3 gap-2">
+                  <h4 className="text-[17px] font-[600] tracking-[-0.374px] text-white leading-tight" title={food.name}>{food.name}</h4>
+                  <span className="text-[10px] text-white/30 shrink-0 mt-1 font-mono">ID: {food.code}</span>
                 </div>
-                <div className="flex flex-wrap gap-1.5 mb-3">
-                  <span className="macro-pill bg-emerald-100 text-emerald-700">Pro: {food.protein}g</span>
-                  <span className="macro-pill bg-amber-100 text-amber-700">Lip: {food.fat}g</span>
-                  <span className="macro-pill text-blue-700 bg-blue-100">Glu: {food.carbs}g</span>
+                <div className="flex flex-wrap gap-1.5 mb-4">
+                  <span className="macro-pill bg-[#2a2a2d] text-white/80">Pro <strong className="text-white">{food.protein}g</strong></span>
+                  <span className="macro-pill bg-[#2a2a2d] text-white/80">Lip <strong className="text-white">{food.fat}g</strong></span>
+                  <span className="macro-pill bg-[#2a2a2d] text-white/80">Glu <strong className="text-white">{food.carbs}g</strong></span>
                 </div>
               </div>
-              <div className="text-lg font-black text-slate-700 mt-auto">
-                {food.energyKcal.toFixed(0)} <span className="text-[10px] font-normal text-slate-400 uppercase">kcal / 100g</span>
+              <div className="mt-auto flex items-end">
+                <div className={cn("text-[24px] font-[700] tracking-tight leading-none", 
+                  food.energyKcal < 100 ? "text-[#34c759]" : food.energyKcal < 300 ? "text-[#ffcc00]" : "text-[#ff3b30]"
+                )}>
+                  {food.energyKcal.toFixed(0)} <span className="text-[12px] font-[500] text-white/40 ml-1">kcal / 100g</span>
+                </div>
               </div>
             </button>
           ))}
           {filteredFoods.length === 0 && (
-             <div className="col-span-full p-8 text-center text-slate-500 text-sm">Aucun aliment trouvé. Modifiez vos filtres.</div>
+             <div className="col-span-full p-12 text-center text-white/50 text-[14px]">Aucun aliment trouvé. Modifiez vos filtres.</div>
           )}
         </section>
 
         {/* Right Sidebar (Details & List) */}
-        <aside className="w-full md:w-80 lg:w-96 bg-white border-l border-slate-200 flex flex-col shrink-0 hidden sm:flex h-full pb-4">
+        <aside className="w-full md:w-80 lg:w-96 bg-[#f5f5f7] border-l border-[#d2d2d7] flex flex-col shrink-0 hidden sm:flex h-full pb-0 text-black">
           {/* Tabs */}
-          <div className="flex border-b border-slate-200 shrink-0">
+          <div className="flex border-b border-[#d2d2d7] shrink-0 px-2 pt-2 bg-[#f5f5f7]">
             <button 
               onClick={() => setRightTab('details')} 
-              className={`flex-1 py-3 text-xs font-bold uppercase tracking-wide border-b-2 flex justify-center items-center gap-2 transition-colors ${rightTab === 'details' ? 'border-indigo-600 text-indigo-700 bg-indigo-50/50' : 'border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
+              className={`flex-1 py-2 text-[13px] font-[600] tracking-[-0.08px] rounded-t-lg mx-1 flex justify-center items-center gap-2 transition-colors ${rightTab === 'details' ? 'bg-white text-black shadow-[0_-1px_0_1px_rgba(0,0,0,0.05)] z-10' : 'bg-transparent text-black/50 hover:text-black hover:bg-black/5'}`}
             >
               <Activity className="w-4 h-4" /> Détails
             </button>
             <button 
               onClick={() => setRightTab('list')} 
-              className={`flex-1 py-3 text-xs font-bold uppercase tracking-wide border-b-2 flex justify-center items-center gap-2 transition-colors ${rightTab === 'list' ? 'border-indigo-600 text-indigo-700 bg-indigo-50/50' : 'border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
+              className={`flex-1 py-2 text-[13px] font-[600] tracking-[-0.08px] rounded-t-lg mx-1 flex justify-center items-center gap-2 transition-colors ${rightTab === 'list' ? 'bg-white text-black shadow-[0_-1px_0_1px_rgba(0,0,0,0.05)] z-10' : 'bg-transparent text-black/50 hover:text-black hover:bg-black/5'}`}
             >
               <ListChecks className="w-4 h-4" /> Ma Liste
               {selectedItems.length > 0 && (
-                <span className="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-full text-[10px] leading-none mb-0.5">{selectedItems.length}</span>
+                <span className="bg-[#0071e3] text-white px-1.5 py-0.5 rounded-full text-[10px] leading-none mb-0.5 font-[600]">{selectedItems.length}</span>
               )}
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto custom-scroll p-5 flex flex-col">
+          <div className="flex-1 overflow-y-auto custom-scroll p-5 flex flex-col bg-white">
             {rightTab === 'details' ? (
               // DETAILS TAB
               selectedFood ? (
                 <>
                   <div className="text-center">
-                    <h2 className="text-lg font-bold text-slate-900">{selectedFood.name}</h2>
-                    <p className="text-xs text-slate-500 mt-1 uppercase tracking-widest">{selectedFood.group}</p>
+                    <h2 className="text-[19px] font-[600] tracking-[-0.4px] text-black leading-tight">{selectedFood.name}</h2>
+                    <p className="text-[12px] font-[400] text-black/50 mt-1 uppercase tracking-widest">{selectedFood.group}</p>
                   </div>
                   
-                  <div className="relative flex justify-center py-2 h-48 w-full -mx-4 overflow-visible shrink-0">
+                  <div className="relative flex justify-center py-2 h-48 w-full -mx-4 overflow-visible shrink-0 mt-2">
                     <ResponsiveContainer width={240} height={200} className="mx-auto block" style={{overflow: 'visible'}}>
                         <RadarChart cx="50%" cy="50%" outerRadius={70} data={[
                             { subject: 'Protéines', val: selectedFood.protein, fullMark: 100 },
@@ -496,65 +496,65 @@ export default function App() {
                             { subject: 'Lipides', val: selectedFood.fat, fullMark: 100 },
                             { subject: 'Fibres', val: selectedFood.fiber, fullMark: 100 },
                         ]}>
-                            <PolarGrid stroke="#f1f5f9" />
-                            <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }} />
+                            <PolarGrid stroke="#f5f5f7" />
+                            <PolarAngleAxis dataKey="subject" tick={{ fill: '#86868b', fontSize: 10, fontWeight: 600 }} />
                             <PolarRadiusAxis angle={30} domain={[0, 'dataMax']} tick={false} axisLine={false} />
-                            <Radar name={selectedFood.name} dataKey="val" stroke="#4f46e5" fill="#4f46e5" fillOpacity={0.3} />
-                            <RechartsTooltip />
+                            <Radar name={selectedFood.name} dataKey="val" stroke="#0071e3" fill="#0071e3" fillOpacity={0.15} strokeWidth={2} />
+                            <RechartsTooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 16px rgba(0,0,0,0.1)' }} />
                         </RadarChart>
                     </ResponsiveContainer>
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none mt-1">
-                       <span className="text-3xl font-black text-slate-800">{selectedFood.energyKcal.toFixed(0)}</span><br/>
-                       <span className="text-[10px] text-slate-400 uppercase font-bold leading-none">kcal</span>
+                       <span className="text-[28px] font-[700] tracking-tight leading-none text-black">{selectedFood.energyKcal.toFixed(0)}</span><br/>
+                       <span className="text-[10px] text-black/40 uppercase font-[600] leading-none">kcal</span>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 shrink-0">
-                    <div className="text-center p-2 bg-emerald-50 rounded-lg">
-                      <div className="text-[10px] text-emerald-600 font-bold uppercase">Protéines</div>
-                      <div className="text-sm font-bold text-emerald-900">{selectedFood.protein}g</div>
+                  <div className="grid grid-cols-3 gap-2 shrink-0 my-4">
+                    <div className="text-center p-3 bg-[#f5f5f7] rounded-[14px]">
+                      <div className="text-[11px] text-black/60 font-[600]">Protéines</div>
+                      <div className="text-[17px] font-[600] text-black mt-1 tracking-tight">{selectedFood.protein}g</div>
                     </div>
-                    <div className="text-center p-2 bg-amber-50 rounded-lg">
-                      <div className="text-[10px] text-amber-600 font-bold uppercase">Lipides</div>
-                      <div className="text-sm font-bold text-amber-900">{selectedFood.fat}g</div>
+                    <div className="text-center p-3 bg-[#f5f5f7] rounded-[14px]">
+                      <div className="text-[11px] text-black/60 font-[600]">Lipides</div>
+                      <div className="text-[17px] font-[600] text-black mt-1 tracking-tight">{selectedFood.fat}g</div>
                     </div>
-                    <div className="text-center p-2 bg-blue-50 rounded-lg">
-                      <div className="text-[10px] text-blue-600 font-bold uppercase">Glucides</div>
-                      <div className="text-sm font-bold text-blue-900">{selectedFood.carbs}g</div>
+                    <div className="text-center p-3 bg-[#f5f5f7] rounded-[14px]">
+                      <div className="text-[11px] text-black/60 font-[600]">Glucides</div>
+                      <div className="text-[17px] font-[600] text-black mt-1 tracking-tight">{selectedFood.carbs}g</div>
                     </div>
                   </div>
                   
-                  <div className="space-y-4 pt-4 border-t mt-4 border-slate-100 text-[10px] pb-4 shrink-0 px-1">
+                  <div className="space-y-4 pt-4 border-t mt-4 border-[#d2d2d7] text-[11px] pb-4 shrink-0 px-1">
                     <div>
-                      <h3 className="font-bold uppercase text-slate-500 mb-1.5 border-b border-slate-100 pb-1">Micro-Nutriments (g)</h3>
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-slate-600">
-                        <div className="flex justify-between"><span>Sucres purs</span> <span className="font-medium text-slate-800">{selectedFood.sugars || 0}</span></div>
-                        <div className="flex justify-between"><span>Fibres</span> <span className="font-medium text-slate-800">{selectedFood.fiber || 0}</span></div>
-                        <div className="flex justify-between"><span>Sel</span> <span className="font-medium text-slate-800">{selectedFood.salt || 0}</span></div>
+                      <h3 className="font-[600] text-black/40 mb-1.5 pb-1 uppercase tracking-widest">Micro-Nutriments (g)</h3>
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-black/80 font-[400]">
+                        <div className="flex justify-between"><span>Sucres purs</span> <span className="font-[600] text-black">{selectedFood.sugars || 0}</span></div>
+                        <div className="flex justify-between"><span>Fibres</span> <span className="font-[600] text-black">{selectedFood.fiber || 0}</span></div>
+                        <div className="flex justify-between"><span>Sel</span> <span className="font-[600] text-black">{selectedFood.salt || 0}</span></div>
                       </div>
                     </div>
                     <div>
-                      <h3 className="font-bold uppercase text-slate-500 mb-1.5 border-b border-slate-100 pb-1">Minéraux & Oligos</h3>
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-slate-600">
-                        <div className="flex justify-between"><span>Magnésium</span> <span className="font-medium text-slate-800">{selectedFood.magnesium || 0} <span className="text-[8px] text-slate-400">mg</span></span></div>
-                        <div className="flex justify-between"><span>Fer</span> <span className="font-medium text-slate-800">{selectedFood.iron || 0} <span className="text-[8px] text-slate-400">mg</span></span></div>
-                        <div className="flex justify-between"><span>Zinc</span> <span className="font-medium text-slate-800">{selectedFood.zinc || 0} <span className="text-[8px] text-slate-400">mg</span></span></div>
-                        <div className="flex justify-between"><span>Iode</span> <span className="font-medium text-slate-800">{selectedFood.iodine || 0} <span className="text-[8px] text-slate-400">µg</span></span></div>
-                        <div className="flex justify-between"><span>Sélénium</span> <span className="font-medium text-slate-800">{selectedFood.selenium || 0} <span className="text-[8px] text-slate-400">µg</span></span></div>
+                      <h3 className="font-[600] text-black/40 mb-1.5 pt-3 pb-1 border-t border-[#d2d2d7]/50 uppercase tracking-widest">Minéraux & Oligos</h3>
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-black/80 font-[400]">
+                        <div className="flex justify-between"><span>Magnésium</span> <span className="font-[600] text-black">{selectedFood.magnesium || 0} <span className="text-[9px] text-black/40 font-[400]">mg</span></span></div>
+                        <div className="flex justify-between"><span>Fer</span> <span className="font-[600] text-black">{selectedFood.iron || 0} <span className="text-[9px] text-black/40 font-[400]">mg</span></span></div>
+                        <div className="flex justify-between"><span>Zinc</span> <span className="font-[600] text-black">{selectedFood.zinc || 0} <span className="text-[9px] text-black/40 font-[400]">mg</span></span></div>
+                        <div className="flex justify-between"><span>Iode</span> <span className="font-[600] text-black">{selectedFood.iodine || 0} <span className="text-[9px] text-black/40 font-[400]">µg</span></span></div>
+                        <div className="flex justify-between"><span>Sélénium</span> <span className="font-[600] text-black">{selectedFood.selenium || 0} <span className="text-[9px] text-black/40 font-[400]">µg</span></span></div>
                       </div>
                     </div>
                     <div>
-                      <h3 className="font-bold uppercase text-slate-500 mb-1.5 border-b border-slate-100 pb-1">Vitamines & Acides Aminés</h3>
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-slate-600">
-                        <div className="flex justify-between"><span>Vitamine A</span> <span className="font-medium text-slate-800">{selectedFood.vitA || 0} <span className="text-[8px] text-slate-400">µg</span></span></div>
-                        <div className="flex justify-between"><span>Vitamine C</span> <span className="font-medium text-slate-800">{selectedFood.vitC || 0} <span className="text-[8px] text-slate-400">mg</span></span></div>
-                        <div className="flex justify-between"><span>Vitamine D3</span> <span className="font-medium text-slate-800">{selectedFood.vitD3 || 0} <span className="text-[8px] text-slate-400">µg</span></span></div>
-                        <div className="flex justify-between"><span>Vitamine E</span> <span className="font-medium text-slate-800">{selectedFood.vitE || 0} <span className="text-[8px] text-slate-400">mg</span></span></div>
-                        <div className="flex justify-between"><span>Vitamine B2</span> <span className="font-medium text-slate-800">{selectedFood.vitB2 || 0} <span className="text-[8px] text-slate-400">mg</span></span></div>
-                        <div className="flex justify-between"><span>Vitamine B6</span> <span className="font-medium text-slate-800">{selectedFood.vitB6 || 0} <span className="text-[8px] text-slate-400">mg</span></span></div>
-                        <div className="flex justify-between"><span>Vitamine B9</span> <span className="font-medium text-slate-800">{selectedFood.vitB9 || 0} <span className="text-[8px] text-slate-400">µg</span></span></div>
-                        <div className="flex justify-between"><span>Vitamine B12</span> <span className="font-medium text-slate-800">{selectedFood.vitB12 || 0} <span className="text-[8px] text-slate-400">µg</span></span></div>
-                        <div className="flex col-span-2 justify-between"><span>L-Tyrosine</span> <span className="font-medium text-slate-800">{selectedFood.tyrosine || 0} <span className="text-[8px] text-slate-400">g</span></span></div>
+                      <h3 className="font-[600] text-black/40 mb-1.5 pt-3 pb-1 border-t border-[#d2d2d7]/50 uppercase tracking-widest">Vitamines & Ac. Aminés</h3>
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-black/80 font-[400]">
+                        <div className="flex justify-between"><span>Vitamine A</span> <span className="font-[600] text-black">{selectedFood.vitA || 0} <span className="text-[9px] text-black/40 font-[400]">µg</span></span></div>
+                        <div className="flex justify-between"><span>Vitamine C</span> <span className="font-[600] text-black">{selectedFood.vitC || 0} <span className="text-[9px] text-black/40 font-[400]">mg</span></span></div>
+                        <div className="flex justify-between"><span>Vitamine D3</span> <span className="font-[600] text-black">{selectedFood.vitD3 || 0} <span className="text-[9px] text-black/40 font-[400]">µg</span></span></div>
+                        <div className="flex justify-between"><span>Vitamine E</span> <span className="font-[600] text-black">{selectedFood.vitE || 0} <span className="text-[9px] text-black/40 font-[400]">mg</span></span></div>
+                        <div className="flex justify-between"><span>Vitamine B2</span> <span className="font-[600] text-black">{selectedFood.vitB2 || 0} <span className="text-[9px] text-black/40 font-[400]">mg</span></span></div>
+                        <div className="flex justify-between"><span>Vitamine B6</span> <span className="font-[600] text-black">{selectedFood.vitB6 || 0} <span className="text-[9px] text-black/40 font-[400]">mg</span></span></div>
+                        <div className="flex justify-between"><span>Vitamine B9</span> <span className="font-[600] text-black">{selectedFood.vitB9 || 0} <span className="text-[9px] text-black/40 font-[400]">µg</span></span></div>
+                        <div className="flex justify-between"><span>Vitamine B12</span> <span className="font-[600] text-black">{selectedFood.vitB12 || 0} <span className="text-[9px] text-black/40 font-[400]">µg</span></span></div>
+                        <div className="flex col-span-2 justify-between"><span>L-Tyrosine</span> <span className="font-[600] text-black">{selectedFood.tyrosine || 0} <span className="text-[9px] text-black/40 font-[400]">g</span></span></div>
                       </div>
                     </div>
                   </div>
@@ -562,16 +562,16 @@ export default function App() {
                   <button 
                     onClick={() => addToSelection(selectedFood)}
                     disabled={selectedItems.some(i => i.code === selectedFood.code)}
-                    className="w-full py-2.5 mt-auto bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed shrink-0"
+                    className="w-full py-3 mt-auto bg-[#0071e3] text-white text-[15px] font-[400] rounded-[980px] hover:bg-[#0077ED] transition-colors disabled:bg-black/10 disabled:text-black/30 disabled:cursor-not-allowed shrink-0"
                   >
                     {selectedItems.some(i => i.code === selectedFood.code) ? 'Déjà dans la liste' : 'Ajouter à la liste'}
                   </button>
 
                 </>
               ) : (
-                <div className="h-full flex flex-col items-center justify-center text-slate-400 text-center">
-                    <Activity className="w-8 h-8 mb-4 text-slate-200" />
-                    <p className="text-xs">Sélectionnez un aliment</p>
+                <div className="h-full flex flex-col items-center justify-center text-black/40 text-center">
+                    <Activity className="w-8 h-8 mb-4 opacity-50" />
+                    <p className="text-[13px] font-[400]">Sélectionnez un aliment</p>
                 </div>
               )
             ) : (
@@ -579,24 +579,24 @@ export default function App() {
               <div className="flex flex-col h-full">
                 {selectedItems.length > 0 ? (
                   <>
-                    <h3 className="font-bold text-sm text-slate-800 mb-3 shrink-0">Aliments sélectionnés</h3>
+                    <h3 className="font-[600] text-[15px] text-black tracking-tight mb-3 shrink-0">Aliments sélectionnés</h3>
                     <div className="flex-1 overflow-y-auto space-y-3 pb-4 pr-1 custom-scroll">
                       {selectedItems.map((item, index) => {
                         const q = item.quantity ?? 100;
                         const factor = q / 100;
                         return (
-                          <div key={`${item.code}-${index}`} className="p-3 bg-white border border-slate-200 rounded-lg relative shadow-sm hover:border-indigo-200 transition-colors">
+                          <div key={`${item.code}-${index}`} className="p-3 bg-[#f5f5f7] border border-[#d2d2d7] rounded-[14px] relative transition-colors">
                             <button 
                               onClick={() => removeFromSelection(item.code)} 
-                              className="absolute top-2 right-2 p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-md transition-colors"
+                              className="absolute top-2 right-2 p-1.5 text-black/40 hover:text-[#ff3b30] rounded-full transition-colors"
                               title="Retirer"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Trash2 className="w-4 h-4" />
                             </button>
-                            <h4 className="font-bold text-xs text-slate-800 pr-8 leading-tight mb-3">{item.name}</h4>
+                            <h4 className="font-[600] text-[13px] text-black pr-8 leading-tight mb-3">{item.name}</h4>
                             
-                            <div className="flex items-center gap-2 mb-3 bg-slate-50 p-1.5 rounded border border-slate-100">
-                              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest shrink-0">Quantité</label>
+                            <div className="flex items-center gap-2 mb-3 bg-white p-2 rounded-[11px] border border-[#d2d2d7]">
+                              <label className="text-[10px] font-[600] text-black/50 uppercase tracking-widest shrink-0">Quantité</label>
                               <input 
                                 type="range"
                                 min="0"
@@ -604,7 +604,7 @@ export default function App() {
                                 step="5"
                                 value={q}
                                 onChange={e => updateItemQuantity(item.code, Number(e.target.value))}
-                                className="flex-1 mx-1 accent-indigo-500 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer min-w-0"
+                                className="flex-1 mx-1 accent-[#0071e3] h-1.5 bg-[#d2d2d7] rounded-lg appearance-none cursor-pointer min-w-0"
                               />
                               <div className="relative w-16 shrink-0">
                                 <input 
@@ -612,28 +612,28 @@ export default function App() {
                                   min="0" 
                                   value={q} 
                                   onChange={e => updateItemQuantity(item.code, Number(e.target.value))} 
-                                  className="w-full text-right pr-4 pl-1 py-1 text-xs font-bold text-slate-800 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 outline-none" 
+                                  className="w-full text-right pr-4 pl-1 py-1 text-[13px] font-[400] text-black bg-transparent outline-none" 
                                 />
-                                <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[9px] text-slate-400 font-medium pointer-events-none">g</span>
+                                <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] text-black/40 font-[600] pointer-events-none">g</span>
                               </div>
                             </div>
                             
-                            <div className="grid grid-cols-4 gap-1 text-center bg-slate-50 rounded py-1.5 border border-slate-100">
+                            <div className="grid grid-cols-4 gap-1 text-center bg-white rounded-[11px] py-1.5 border border-[#d2d2d7]">
                               <div>
-                                <div className="text-[8px] font-bold text-slate-400 uppercase">Kcal</div>
-                                <div className="text-[10px] font-bold text-slate-700">{((item.energyKcal || 0) * factor).toFixed(0)}</div>
+                                <div className="text-[9px] font-[600] text-black/40 uppercase tracking-wide">Kcal</div>
+                                <div className="text-[12px] font-[600] text-black tracking-tight">{((item.energyKcal || 0) * factor).toFixed(0)}</div>
                               </div>
                               <div>
-                                <div className="text-[8px] font-bold text-slate-400 uppercase">Pro</div>
-                                <div className="text-[10px] font-bold text-slate-700">{((item.protein || 0) * factor).toFixed(1)}</div>
+                                <div className="text-[9px] font-[600] text-black/40 uppercase tracking-wide">Pro</div>
+                                <div className="text-[12px] font-[600] text-black tracking-tight">{((item.protein || 0) * factor).toFixed(1)}</div>
                               </div>
                               <div>
-                                <div className="text-[8px] font-bold text-slate-400 uppercase">Lip</div>
-                                <div className="text-[10px] font-bold text-slate-700">{((item.fat || 0) * factor).toFixed(1)}</div>
+                                <div className="text-[9px] font-[600] text-black/40 uppercase tracking-wide">Lip</div>
+                                <div className="text-[12px] font-[600] text-black tracking-tight">{((item.fat || 0) * factor).toFixed(1)}</div>
                               </div>
                               <div>
-                                <div className="text-[8px] font-bold text-slate-400 uppercase">Glu</div>
-                                <div className="text-[10px] font-bold text-slate-700">{((item.carbs || 0) * factor).toFixed(1)}</div>
+                                <div className="text-[9px] font-[600] text-black/40 uppercase tracking-wide">Glu</div>
+                                <div className="text-[12px] font-[600] text-black tracking-tight">{((item.carbs || 0) * factor).toFixed(1)}</div>
                               </div>
                             </div>
                           </div>
@@ -641,13 +641,13 @@ export default function App() {
                       })}
                     </div>
                     
-                    <div className="pt-4 border-t border-slate-200 mt-4 shrink-0 bg-white">
-                      <h3 className="font-bold text-sm text-slate-800 mb-3">Résumé Nutritionnel</h3>
+                    <div className="pt-4 border-t border-[#d2d2d7] mt-4 shrink-0 bg-white">
+                      <h3 className="font-[600] text-[15px] text-black tracking-tight mb-3">Résumé Nutritionnel</h3>
                       
                       <div className="space-y-4">
                         {/* Group: Macro-nutriments */}
                         <div>
-                          <h4 className="font-bold text-[10px] uppercase text-slate-500 mb-2 border-b border-slate-100 pb-1">Macro-nutriments</h4>
+                          <h4 className="font-[600] text-[10px] uppercase text-black/40 mb-2 border-b border-[#d2d2d7] pb-1">Macro-nutriments</h4>
                           <div className="space-y-2">
                              {[
                                { label: 'Énergie', val: totals.energyKcal, vnr: VNR.energyKcal, unit: 'kcal' },
@@ -661,12 +661,12 @@ export default function App() {
                                const pct = Math.round((item.val / item.vnr) * 100);
                                return (
                                  <div key={item.label} className="w-full">
-                                   <div className="flex justify-between items-end mb-0.5 text-[9px]">
-                                     <span className="text-slate-600 font-medium">{item.label}</span>
-                                     <span className="font-bold text-slate-800">{item.val.toFixed(1)}<span className="font-normal text-[8px] text-slate-400 ml-0.5">{item.unit}</span> <span className={cn("ml-1 font-bold w-7 inline-block text-right", pct > 100 ? "text-rose-500" : "text-indigo-500")}>{pct}%</span></span>
+                                   <div className="flex justify-between items-end mb-0.5 text-[11px] tracking-tight">
+                                     <span className="text-black/80 font-[400]">{item.label}</span>
+                                     <span className="font-[600] text-black">{item.val.toFixed(1)}<span className="font-[400] text-[10px] text-black/50 ml-0.5">{item.unit}</span> <span className={cn("ml-1 font-[600] w-7 inline-block text-right", pct > 100 ? "text-[#ff3b30]" : "text-[#0071e3]")}>{pct}%</span></span>
                                    </div>
-                                   <div className="h-1 bg-slate-100 rounded-full w-full overflow-hidden">
-                                     <div className={cn("h-full transition-all", pct > 100 ? "bg-rose-500" : "bg-indigo-400")} style={{width: `${Math.min(100, pct)}%`}}></div>
+                                   <div className="h-1 bg-[#f5f5f7] rounded-full w-full overflow-hidden">
+                                     <div className={cn("h-full transition-all", pct > 100 ? "bg-[#ff3b30]" : "bg-[#0071e3]")} style={{width: `${Math.min(100, pct)}%`}}></div>
                                    </div>
                                  </div>
                                )
@@ -676,7 +676,7 @@ export default function App() {
 
                         {/* Group: Minéraux & Oligos */}
                         <div>
-                          <h4 className="font-bold text-[10px] uppercase text-slate-500 mb-2 border-b border-slate-100 pb-1">Minéraux & Oligos</h4>
+                          <h4 className="font-[600] text-[10px] uppercase text-black/40 mb-2 border-b border-[#d2d2d7] pb-1">Minéraux & Oligos</h4>
                           <div className="space-y-2">
                              {[
                                { label: 'Magnésium', val: totals.magnesium, vnr: VNR.magnesium, unit: 'mg' },
@@ -688,12 +688,12 @@ export default function App() {
                                const pct = Math.round((item.val / item.vnr) * 100);
                                return (
                                  <div key={item.label} className="w-full">
-                                   <div className="flex justify-between items-end mb-0.5 text-[9px]">
-                                     <span className="text-slate-600 font-medium">{item.label}</span>
-                                     <span className="font-bold text-slate-800">{item.val.toFixed(1)}<span className="font-normal text-[8px] text-slate-400 ml-0.5">{item.unit}</span> <span className={cn("ml-1 font-bold w-7 inline-block text-right", pct > 100 ? "text-rose-500" : "text-indigo-500")}>{pct}%</span></span>
+                                   <div className="flex justify-between items-end mb-0.5 text-[11px] tracking-tight">
+                                     <span className="text-black/80 font-[400]">{item.label}</span>
+                                     <span className="font-[600] text-black">{item.val.toFixed(1)}<span className="font-[400] text-[10px] text-black/50 ml-0.5">{item.unit}</span> <span className={cn("ml-1 font-[600] w-7 inline-block text-right", pct > 100 ? "text-[#ff3b30]" : "text-[#0071e3]")}>{pct}%</span></span>
                                    </div>
-                                   <div className="h-1 bg-slate-100 rounded-full w-full overflow-hidden">
-                                     <div className={cn("h-full transition-all", pct > 100 ? "bg-rose-500" : "bg-indigo-400")} style={{width: `${Math.min(100, pct)}%`}}></div>
+                                   <div className="h-1 bg-[#f5f5f7] rounded-full w-full overflow-hidden">
+                                     <div className={cn("h-full transition-all", pct > 100 ? "bg-[#ff3b30]" : "bg-[#0071e3]")} style={{width: `${Math.min(100, pct)}%`}}></div>
                                    </div>
                                  </div>
                                )
@@ -703,7 +703,7 @@ export default function App() {
                         
                         {/* Group: Vitamines & Acides Aminés */}
                         <div>
-                          <h4 className="font-bold text-[10px] uppercase text-slate-500 mb-2 border-b border-slate-100 pb-1">Vitamines & Acides Aminés</h4>
+                          <h4 className="font-[600] text-[10px] uppercase text-black/40 mb-2 border-b border-[#d2d2d7] pb-1">Vitamines & Ac. Aminés</h4>
                           <div className="space-y-2">
                              {[
                                { label: 'Vitamine A', val: totals.vitA, vnr: VNR.vitA, unit: 'µg' },
@@ -719,12 +719,12 @@ export default function App() {
                                const pct = Math.round((item.val / item.vnr) * 100);
                                return (
                                  <div key={item.label} className="w-full">
-                                   <div className="flex justify-between items-end mb-0.5 text-[9px]">
-                                     <span className="text-slate-600 font-medium">{item.label}</span>
-                                     <span className="font-bold text-slate-800">{item.val.toFixed(1)}<span className="font-normal text-[8px] text-slate-400 ml-0.5">{item.unit}</span> <span className={cn("ml-1 font-bold w-7 inline-block text-right", pct > 100 ? "text-rose-500" : "text-indigo-500")}>{pct}%</span></span>
+                                   <div className="flex justify-between items-end mb-0.5 text-[11px] tracking-tight">
+                                     <span className="text-black/80 font-[400]">{item.label}</span>
+                                     <span className="font-[600] text-black">{item.val.toFixed(1)}<span className="font-[400] text-[10px] text-black/50 ml-0.5">{item.unit}</span> <span className={cn("ml-1 font-[600] w-7 inline-block text-right", pct > 100 ? "text-[#ff3b30]" : "text-[#0071e3]")}>{pct}%</span></span>
                                    </div>
-                                   <div className="h-1 bg-slate-100 rounded-full w-full overflow-hidden">
-                                     <div className={cn("h-full transition-all", pct > 100 ? "bg-rose-500" : "bg-indigo-400")} style={{width: `${Math.min(100, pct)}%`}}></div>
+                                   <div className="h-1 bg-[#f5f5f7] rounded-full w-full overflow-hidden">
+                                     <div className={cn("h-full transition-all", pct > 100 ? "bg-[#ff3b30]" : "bg-[#0071e3]")} style={{width: `${Math.min(100, pct)}%`}}></div>
                                    </div>
                                  </div>
                                )
@@ -735,12 +735,12 @@ export default function App() {
                     </div>
                   </>
                 ) : (
-                  <div className="h-full flex flex-col items-center justify-center text-slate-400 text-center">
-                    <ListChecks className="w-8 h-8 mb-4 text-slate-200" />
-                    <p className="text-xs">Votre liste est vide</p>
+                  <div className="h-full flex flex-col items-center justify-center text-black/40 text-center">
+                    <ListChecks className="w-8 h-8 mb-4 opacity-50" />
+                    <p className="text-[13px] font-[400]">Votre liste est vide</p>
                     <button 
                       onClick={() => setRightTab('details')}
-                      className="mt-4 text-indigo-600 hover:underline text-xs font-medium"
+                      className="mt-4 text-[#0071e3] hover:underline text-[13px] font-[400]"
                     >
                       Rechercher des aliments
                     </button>
